@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Controller</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: white;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #login-container {
+            text-align: center;
+            padding: 20px;
+        }
+        #player-container {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+        }
+        .hidden {
+            display: none !important;
+        }
+        button {
+            background-color: #1DB954;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #1ed760;
+        }
+        #album-art {
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
+            box-shadow: 0 4px 60px rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+        }
+        #track-info {
+            margin-bottom: 20px;
+        }
+        #track-name {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        #artist-name {
+            font-size: 18px;
+            color: #b3b3b3;
+        }
+        #controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+        .setup-instructions {
+            background-color: #282828;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            max-width: 600px;
+            text-align: left;
+        }
+        .setup-instructions code {
+            background-color: #121212;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div id="login-container">
+        <h1>Spotify Controller</h1>
+        <div class="setup-instructions">
+            <h2>First-time Setup:</h2>
+            <ol>
+                <li>Create a Spotify Developer application at 
+                <a href="https://developer.spotify.com/dashboard" target="_blank">developer.spotify.com/dashboard</a></li>
+                <li>Set the Redirect URI to: <code id="redirect-uri">https://yourusername.github.io/spotify-controller/</code></li>
+                <li>Copy your Client ID</li>
+                <li>You can either:
+                    <ul>
+                        <li>Enter it below and click "Save Client ID", or</li>
+                        <li>Append it to the URL like: <code id="url-example">https://yourusername.github.io/spotify-controller/#client_id=YOUR_CLIENT_ID</code></li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+        <div>
+            <input type="text" id="client-id-input" placeholder="Enter your Spotify Client ID">
+            <button id="save-client-id">Save Client ID</button>
+        </div>
+        <button id="login-button" class="hidden">Connect to Spotify</button>
+    </div>
+
+    <div id="player-container">
+        <div id="album-art"></div>
+        <div id="track-info">
+            <div id="track-name">Not Playing</div>
+            <div id="artist-name">-</div>
+        </div>
+        <div id="controls">
+            <button id="prev-button">Previous</button>
+            <button id="play-button">Play</button>
+            <button id="pause-button">Pause</button>
+            <button id="next-button">Next</button>
+        </div>
+    </div>
+
+    <script>
+        // Authentication & Authorization
+        const SPOTIFY_AUTH_ENDPOINT = 'https://accounts.spotify.com/authorize';
+        const SPOTIFY_API_ENDPOINT = 'https://api.spotify.com/v1';
+        const SCOPES = [
+            'user-read-private',
+            'user-read-currently-playing',
+            'user-read-playback-state',
+            'user-modify-playback-state'
+        ];
+        
+        // DOM Elements
+        const loginContainer = document.getElementById('login-container');
+        const playerContainer = document.getElementById('player-container');
+        const clientIdInput = document.getElementById('client-id-input');
+        const saveClientIdButton = document.getElementById('save-client-id');
+        const loginButton = document.getElementById('login-button');
+        const redirectUriElement = document.getElementById('redirect-uri');
+        const prevButton = document.getElementById('prev-button');
+        const playButton = document.getElementById('play-button');
+        const pauseButton = document.getElementById('pause-button');
+        const nextButton = document.getElementById('next-button');
+        const albumArt = document.getElementById('album-art');
+        const trackName = document.getElementById('track-name');
+        const artistName = document.getElementById('artist-name');
+        
+        // Set the correct redirect URI and URL example
+        const baseUrl = window.location.href.split('#')[0];
+        redirectUriElement.textContent = baseUrl;
+        const urlExample = document.getElementById('url-example');
+        urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
+        
+        // Check URL hash for client ID first
+        let clientId;
+        const urlParams = new URLSearchParams(window.location.hash.substring(1));
+        const urlClientId = urlParams.get('client_id');
+        
+        if (urlClientId) {
+            // Found client ID in URL, save it to localStorage
+            clientId = urlClientId;
+            localStorage.setItem('spotify_client_id', clientId);
+            // Remove hash from URL without page reload
+            history.replaceState(null, null, window.location.pathname);
+            clientIdInput.value = clientId;
+            loginButton.classList.remove('hidden');
+        } else {
+            // Check localStorage as fallback
+            clientId = localStorage.getItem('spotify_client_id');
+            if (clientId) {
+                clientIdInput.value = clientId;
+                loginButton.classList.remove('hidden');
+            }
+        }
+        
+        // Save Client ID to localStorage
+        saveClientIdButton.addEventListener('click', () => {
+            const newClientId = clientIdInput.value.trim();
+            if (newClientId) {
+                localStorage.setItem('spotify_client_id', newClientId);
+                clientId = newClientId;
+                loginButton.classList.remove('hidden');
+                alert('Client ID saved successfully!');
+            } else {
+                alert('Please enter a valid Client ID');
+            }
+        });
+        
+        // Handle Login
+        loginButton.addEventListener('click', () => {
+            if (!clientId) {
+                alert('Please enter your Spotify Client ID first');
+                return;
+            }
+            
+            const authUrl = new URL(SPOTIFY_AUTH_ENDPOINT);
+            const params = {
+                client_id: clientId,
+                redirect_uri: baseUrl,
+                scope: SCOPES.join(' '),
+                response_type: 'token',
+                show_dialog: true
+            };
+            
+            authUrl.search = new URLSearchParams(params).toString();
+            window.location.href = authUrl.toString();
+        });
+        
+        // Parse token from URL hash
+        function getHashParams() {
+            const hashParams = {};
+            const hash = window.location.hash.substring(1);
+            
+            if (!hash) {
+                return hashParams;
+            }
+            
+            hash.split('&').forEach(pair => {
+                const [key, value] = pair.split('=');
+                hashParams[key] = decodeURIComponent(value);
+            });
+            
+            return hashParams;
+        }
+        
+        // Initialize app
+        function initApp() {
+            const params = getHashParams();
+            const accessToken = params.access_token;
+            
+            if (accessToken) {
+                // Remove hash from URL
+                history.replaceState(null, null, ' ');
+                
+                // Store token and expiration
+                const expiresIn = params.expires_in;
+                const tokenTimestamp = Date.now();
+                
+                localStorage.setItem('spotify_access_token', accessToken);
+                localStorage.setItem('spotify_token_timestamp', tokenTimestamp);
+                localStorage.setItem('spotify_token_expires_in', expiresIn);
+                
+                // Show player UI
+                loginContainer.style.display = 'none';
+                playerContainer.style.display = 'block';
+                
+                // Set up player
+                setupPlayer(accessToken);
+            } else {
+                // Check if we have a valid stored token
+                const storedToken = localStorage.getItem('spotify_access_token');
+                const storedTimestamp = localStorage.getItem('spotify_token_timestamp');
+                const storedExpiresIn = localStorage.getItem('spotify_token_expires_in');
+                
+                if (storedToken && storedTimestamp && storedExpiresIn) {
+                    const now = Date.now();
+                    const elapsed = (now - storedTimestamp) / 1000;
+                    
+                    if (elapsed < storedExpiresIn) {
+                        // Token still valid
+                        loginContainer.style.display = 'none';
+                        playerContainer.style.display = 'block';
+                        
+                        // Set up player
+                        setupPlayer(storedToken);
+                        return;
+                    }
+                }
+                
+                // If we reach here, we need to login again
+                loginContainer.style.display = 'block';
+                playerContainer.style.display = 'none';
+            }
+        }
+        
+        // Set up player functionality
+        function setupPlayer(token) {
+            // Set up event listeners for player controls
+            prevButton.addEventListener('click', () => {
+                spotifyApiCall('POST', '/me/player/previous');
+                setTimeout(getCurrentlyPlaying, 500);
+            });
+            
+            playButton.addEventListener('click', () => {
+                spotifyApiCall('PUT', '/me/player/play');
+                setTimeout(getCurrentlyPlaying, 500);
+            });
+            
+            pauseButton.addEventListener('click', () => {
+                spotifyApiCall('PUT', '/me/player/pause');
+                setTimeout(getCurrentlyPlaying, 500);
+            });
+            
+            nextButton.addEventListener('click', () => {
+                spotifyApiCall('POST', '/me/player/next');
+                setTimeout(getCurrentlyPlaying, 500);
+            });
+            
+            // Start polling for current track
+            getCurrentlyPlaying();
+            setInterval(getCurrentlyPlaying, 5000);
+        }
+        
+        // Make API calls to Spotify
+        async function spotifyApiCall(method, endpoint, body = null) {
+            const token = localStorage.getItem('spotify_access_token');
+            
+            try {
+                const response = await fetch(`${SPOTIFY_API_ENDPOINT}${endpoint}`, {
+                    method: method,
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: body ? JSON.stringify(body) : null
+                });
+                
+                if (response.status === 401) {
+                    // Token expired
+                    localStorage.removeItem('spotify_access_token');
+                    alert('Your session has expired. Please log in again.');
+                    window.location.reload();
+                    return null;
+                }
+                
+                if (response.status === 204) {
+                    return true; // Success but no content
+                }
+                
+                if (response.ok) {
+                    return await response.json();
+                } else {
+                    console.error('API Error:', response.status);
+                    return null;
+                }
+            } catch (error) {
+                console.error('API Request Failed:', error);
+                return null;
+            }
+        }
+        
+        // Get and display currently playing track
+        async function getCurrentlyPlaying() {
+            const data = await spotifyApiCall('GET', '/me/player/currently-playing');
+            
+            if (data && data.item) {
+                // Update UI with track info
+                trackName.textContent = data.item.name;
+                artistName.textContent = data.item.artists.map(artist => artist.name).join(', ');
+                
+                // Update album art
+                if (data.item.album.images.length > 0) {
+                    albumArt.innerHTML = `<img src="${data.item.album.images[0].url}" alt="Album Art" style="width:100%; height:100%; border-radius:8px;">`;
+                }
+            } else {
+                // No track playing
+                trackName.textContent = 'Not Playing';
+                artistName.textContent = '-';
+                albumArt.innerHTML = '';
+            }
+        }
+        
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
