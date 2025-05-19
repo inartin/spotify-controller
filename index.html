@@ -3,13 +3,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spotify Controller</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #121212;
-            color: white;
+        :root {
+            /* Base icon sizes */
+            --icon-size-xs: 16px;
+            --icon-size-sm: 20px;
+            --icon-size-md: 24px;
+            --icon-size-lg: 36px;
+            --icon-size-xl: 48px;
+            --icon-size-xxl: 80px;
+            
+            /* Icon size assignments */
+            --play-pause-icon-size: var(--icon-size-xxl);
+            --prev-next-icon-size: var(--icon-size-xl);
+            --utility-icon-size: var(--icon-size-md);
+            
+            /* Button padding (determines size based on content) */
+            --btn-control-padding: 16px;
+            --btn-border-radius: 30px;
+            --btn-play-border-radius: 50%;
+            
+            /* Button colors */
+            --color-spotify-green: #1db9542a;
+            --color-spotify-green-hover: #1ed75f25;
+            --color-playing-blue: #1a73e81d;
+            --color-button-bg: #1ed75f25;
+            --color-button-utility: rgba(40, 40, 40, 0.7);
+            
+            /* Spacing */
+            --spacing-xs: 8px;
+            --spacing-sm: 10px;
+            --spacing-md: 20px;
+            --spacing-lg: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            :root {
+                /* Smaller sizes for mobile */
+                --btn-play-pause-size: 70px;
+                --btn-control-size: 46px;
+                --btn-utility-size: 40px;
+                --spacing-lg: 24px;
+                --spacing-md: 16px;
+            }
+        }
+        
+        html, body {
             margin: 0;
             padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #000000;
+            color: white;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -19,68 +70,215 @@
         #login-container {
             text-align: center;
             padding: 20px;
+            max-width: 90%;
         }
         #player-container {
             display: none;
             width: 100%;
             max-width: 800px;
             text-align: center;
+            padding: 20px;
+            position: relative; /* For absolute positioning of children */
+        }
+        /* Fullscreen styling */
+        #player-container:fullscreen {
+            background-color: #121212;
+            max-width: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 20px;
+        }
+        #player-container:fullscreen #album-art {
+            width: 400px;
+            height: 400px;
+            margin: 20px auto;
+        }
+        #player-container:fullscreen .album-info-container {
+            flex-direction: column;
+            align-items: center;
+        }
+        #player-container:fullscreen #track-info {
+            margin-left: 0;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        #player-container:fullscreen #prev-button {
+            left: 5%;
+        }
+        
+        #player-container:fullscreen #next-button {
+            right: 5%;
         }
         .hidden {
             display: none !important;
         }
         button {
-            background-color: #1DB954;
+            background-color: var(--color-button-bg);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 30px;
+            padding: var(--btn-control-padding); /* Bigger buttons */
+            border-radius: var(--btn-border-radius);
             font-weight: bold;
             cursor: pointer;
-            margin: 5px;
+            margin: var(--spacing-sm);
+            font-size: 20px; /* Larger font for buttons */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
         }
-        button:hover {
-            background-color: #1ed760;
+        button:hover, button:active {
+            background-color: #1ed75f25;
+            transform: scale(1.05);
+        }
+        .album-info-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
         }
         #album-art {
             width: 300px;
             height: 300px;
-            margin: 20px auto;
-            box-shadow: 0 4px 60px rgba(0, 0, 0, 0.5);
-            border-radius: 8px;
+            box-shadow: 0 8px 60px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            overflow: hidden;
+            flex-shrink: 0;
         }
         #track-info {
-            margin-bottom: 20px;
+            margin-left: 30px;
+            text-align: left;
+            flex-grow: 1;
+            max-width: 400px;
         }
         #track-name {
-            font-size: 24px;
-            margin-bottom: 5px;
+            font-size: 28px;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         #artist-name {
-            font-size: 18px;
+            font-size: 20px;
             color: #b3b3b3;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         #progress-container {
-            margin: 15px auto;
-            width: 80%;
-            max-width: 400px;
+            margin: 55px auto;
+            width: 90%;
+            max-width: 800px;
         }
         #progress-bar {
             width: 100%;
             cursor: pointer;
+            height: 10px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #535353;
+            border-radius: 5px;
+            outline: none;
+        }
+        #progress-bar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #1DB954;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         #time-display {
             display: flex;
             justify-content: space-between;
-            font-size: 14px;
-            color: #b3b3b3;
-            margin-top: 5px;
+            font-size: 16px;
+            color: #9AA0A6; /* Modern gray for time display */
+            margin-top: 8px;
         }
         #controls {
             display: flex;
             justify-content: center;
             align-items: center;
-            margin: 20px 0;
+            margin-top: 80px;
+            flex-wrap: wrap;
+        }
+        
+        #prev-button {
+            position: fixed;
+            left: 5%;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+        }
+        
+        #next-button {
+            position: fixed;
+            right: 5%;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+        }
+        
+        @media (max-width: 768px) {
+            #prev-button {
+                left: 10px;
+            }
+            
+            #next-button {
+                right: 10px;
+            }
+        }
+        .control-button {
+            padding: var(--btn-control-padding);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: var(--spacing-md);
+            /* Remove width/height, let padding determine size */
+        }
+        #play-pause-button {
+            background-color: #1db9543a;
+            padding: var(--btn-control-padding);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 var(--spacing-lg);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            /* Remove width/height, let content and padding determine size */
+        }
+        #play-pause-button:hover, #play-pause-button:active {
+            transform: scale(1.1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+        #mute-toggle-button, #fullscreen-button {
+            position: fixed;
+            background-color: rgba(40, 40, 40, 0.7);
+            padding: var(--btn-control-padding);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            z-index: 1000;
+            /* Remove width/height, let content and padding determine size */
+        }
+        
+        #mute-toggle-button {
+            bottom: var(--spacing-md);
+            right: var(--spacing-md);
+        }
+        
+        #fullscreen-button {
+            top: var(--spacing-md);
+            right: var(--spacing-md);
+        }
+        
+        #mute-toggle-button:hover, #fullscreen-button:hover {
+            background-color: rgba(60, 60, 60, 0.9);
         }
         .setup-instructions {
             background-color: #282828;
@@ -94,6 +292,79 @@
             background-color: #121212;
             padding: 2px 5px;
             border-radius: 3px;
+        }
+        @media (max-width: 768px) {
+            :root {
+                --unit: 7px; /* Slightly smaller base unit for mobile */
+                /* All derived values will adjust automatically */
+            }
+            
+            #album-art {
+                width: 200px;
+                height: 200px;
+            }
+            .album-info-container {
+                flex-direction: column;
+            }
+            #track-info {
+                margin-left: 0;
+                margin-top: var(--spacing-lg);
+                text-align: center;
+            }
+            button {
+                font-size: var(--icon-size-sm);
+            }
+            #track-name {
+                font-size: 24px;
+            }
+            #artist-name {
+                font-size: 18px;
+            }
+        }
+        /* Icon styling */
+        .icon {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: var(--icon-size-md); /* Default size */
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Control buttons icon sizes */
+        #prev-button .icon {
+            font-size: var(--prev-next-icon-size);
+        }
+        
+        #play-pause-button .icon {
+            font-size: var(--play-pause-icon-size);
+        }
+        
+        #next-button .icon {
+            font-size: var(--prev-next-icon-size);
+        }
+        
+        /* Utility buttons icon sizes */
+        #mute-toggle-button .icon {
+            font-size: var(--utility-icon-size);
+        }
+        
+        #fullscreen-button .icon {
+            font-size: var(--utility-icon-size);
+        }
+        
+        /* Play button states */
+        #play-pause-button.playing {
+            background-color: #1a73e81d; /* Modern blue when playing/pause button */
+        }
+        #play-pause-button.paused {
+            background-color: #1db9542a; /* Original Spotify green when paused/play button */
         }
     </style>
 </head>
@@ -125,10 +396,12 @@
     </div>
 
     <div id="player-container">
-        <div id="album-art"></div>
-        <div id="track-info">
-            <div id="track-name">Not Playing</div>
-            <div id="artist-name">-</div>
+        <div class="album-info-container">
+            <div id="album-art"></div>
+            <div id="track-info">
+                <div id="track-name">Not Playing</div>
+                <div id="artist-name">-</div>
+            </div>
         </div>
         <div id="progress-container">
             <input type="range" id="progress-bar" value="0" style="width: 100%;">
@@ -138,13 +411,12 @@
             </div>
         </div>
         <div id="controls">
-            <button id="prev-button">Previous</button>
-            <button id="play-button">Play</button>
-            <button id="pause-button">Pause</button>
-            <button id="next-button">Next</button>
-            <button id="mute-toggle-button">Mute</button>
-            <button id="fullscreen-button">Fullscreen</button>
+            <button id="next-button" class="control-button"><span class="icon">skip_next</span></button>
+            <button id="play-pause-button" class="paused"><span class="icon">play_arrow</span></button>
+            <button id="prev-button" class="control-button"><span class="icon">skip_previous</span></button>
         </div>
+        <button id="mute-toggle-button"><span class="icon">volume_up</span></button>
+        <button id="fullscreen-button"><span class="icon">fullscreen</span></button>
     </div>
 
     <script>
@@ -194,8 +466,7 @@ const saveClientIdButton = document.getElementById('save-client-id');
 const loginButton = document.getElementById('login-button');
 const redirectUriElement = document.getElementById('redirect-uri');
 const prevButton = document.getElementById('prev-button');
-const playButton = document.getElementById('play-button');
-const pauseButton = document.getElementById('pause-button');
+const playPauseButton = document.getElementById('play-pause-button');
 const nextButton = document.getElementById('next-button');
 const albumArt = document.getElementById('album-art');
 const trackName = document.getElementById('track-name');
@@ -496,13 +767,20 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                 setTimeout(getCurrentlyPlaying, 500);
             });
             
-            playButton.addEventListener('click', () => {
-                spotifyApiCall('PUT', '/me/player/play');
-                setTimeout(getCurrentlyPlaying, 500);
-            });
-            
-            pauseButton.addEventListener('click', () => {
-                spotifyApiCall('PUT', '/me/player/pause');
+            playPauseButton.addEventListener('click', () => {
+                if (currentPlayState) {
+                    // If currently playing, pause
+                    spotifyApiCall('PUT', '/me/player/pause');
+                    playPauseButton.querySelector('.icon').textContent = 'play_arrow';
+                    playPauseButton.classList.remove('playing');
+                    playPauseButton.classList.add('paused');
+                } else {
+                    // If paused or stopped, play
+                    spotifyApiCall('PUT', '/me/player/play');
+                    playPauseButton.querySelector('.icon').textContent = 'pause';
+                    playPauseButton.classList.remove('paused');
+                    playPauseButton.classList.add('playing');
+                }
                 setTimeout(getCurrentlyPlaying, 500);
             });
             
@@ -527,7 +805,7 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                 let targetVolume;
                 if (isCurrentlyMuted) {
                     targetVolume = currentVolumeBeforeMute > 0 ? currentVolumeBeforeMute : 50; // Restore or default
-                    muteToggleButton.textContent = 'Mute'; // Immediately update UI
+                    muteToggleButton.querySelector('.icon').textContent = 'volume_up'; // Immediately update UI
                     isCurrentlyMuted = false; // Immediately update state
                 } else {
                     // Before muting, store current volume
@@ -536,7 +814,7 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                         currentVolumeBeforeMute = playerData.device.volume_percent;
                     }
                     targetVolume = 0;
-                    muteToggleButton.textContent = 'Unmute'; // Immediately update UI
+                    muteToggleButton.querySelector('.icon').textContent = 'volume_off'; // Immediately update UI
                     isCurrentlyMuted = true; // Immediately update state
                 }
                 await spotifyApiCall('PUT', `/me/player/volume?volume_percent=${targetVolume}`);
@@ -554,7 +832,7 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                     } else if (playerContainer.msRequestFullscreen) { /* IE11 */
                         playerContainer.msRequestFullscreen();
                     }
-                    fullscreenButton.textContent = 'Exit Fullscreen';
+                    fullscreenButton.querySelector('.icon').textContent = 'fullscreen_exit';
                 } else {
                     // Exit fullscreen
                     if (document.exitFullscreen) {
@@ -564,7 +842,16 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                     } else if (document.msExitFullscreen) { /* IE11 */
                         document.msExitFullscreen();
                     }
-                    fullscreenButton.textContent = 'Fullscreen';
+                    fullscreenButton.querySelector('.icon').textContent = 'fullscreen';
+                }
+            });
+            
+            // Listen for fullscreen change events (like when user presses Escape)
+            document.addEventListener('fullscreenchange', () => {
+                if (!document.fullscreenElement) {
+                    fullscreenButton.querySelector('.icon').textContent = 'fullscreen';
+                } else {
+                    fullscreenButton.querySelector('.icon').textContent = 'fullscreen_exit';
                 }
             });
             
@@ -572,8 +859,8 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
             getCurrentlyPlaying();
             
             // Adaptive polling - increase interval when inactive
-            let pollingInterval = 3000; // Start with 3 seconds
-            const maxPollingInterval = 10000; // Max 10 seconds between polls
+            let pollingInterval = 5000; // Start with 5 seconds
+            const maxPollingInterval = 15000; // Max 15 seconds between polls
             let inactiveTime = 0;
             
             function adaptivePolling() {
@@ -582,7 +869,7 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                         // If track changed or playback state changed
                         if (hasActivity) {
                             inactiveTime = 0;
-                            pollingInterval = 3000; // Reset to 3 seconds
+                            pollingInterval = 5000; // Reset to 5 seconds
                         } else {
                             inactiveTime += pollingInterval;
                             // Gradually increase polling interval when inactive
@@ -597,6 +884,31 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
             
             // Start adaptive polling
             adaptivePolling();
+            
+            // Start separate timer for updating playback position
+            startPlaybackTimer();
+        }
+        
+        // Timer for updating the playback position without API calls
+        let playbackTimerId = null;
+        
+        function startPlaybackTimer() {
+            // Clear any existing timer
+            if (playbackTimerId) {
+                clearInterval(playbackTimerId);
+            }
+            
+            // Update playback position every second if music is playing
+            playbackTimerId = setInterval(() => {
+                if (currentPlayState) {
+                    // Only increment if currently playing
+                    currentProgressMs += 1000; // Add 1 second
+                    
+                    // Update UI
+                    progressBar.value = currentProgressMs;
+                    currentTimeDisplay.textContent = formatTime(currentProgressMs);
+                }
+            }, 1000);
         }
         
         // Make API calls to Spotify
@@ -671,11 +983,11 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
 
                         if (actualVolume === 0) {
                             isCurrentlyMuted = true;
-                            muteToggleButton.textContent = 'Unmute';
+                            muteToggleButton.querySelector('.icon').textContent = 'volume_off';
                             // currentVolumeBeforeMute retains its value from when it was last non-zero
                         } else {
                             isCurrentlyMuted = false;
-                            muteToggleButton.textContent = 'Mute';
+                            muteToggleButton.querySelector('.icon').textContent = 'volume_up';
                             currentVolumeBeforeMute = actualVolume; // Store the current non-zero volume
                         }
                         if (isCurrentlyMuted !== previousMuteState) {
@@ -698,6 +1010,20 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                         const albumChanged = newAlbumId !== currentAlbumId;
                         const progressChanged = currentProgressMs !== newProgress;
 
+                        // Update play/pause button icon based on play state
+                        if (newPlayState !== currentPlayState) {
+                            playPauseButton.querySelector('.icon').textContent = newPlayState ? 'pause' : 'play_arrow';
+                            if (newPlayState) {
+                                playPauseButton.classList.remove('paused');
+                                playPauseButton.classList.add('playing');
+                            } else {
+                                playPauseButton.classList.remove('playing');
+                                playPauseButton.classList.add('paused');
+                            }
+                            
+                            // Restart the playback timer when play state changes
+                            startPlaybackTimer();
+                        }
 
                         if (trackChanged || playStateChanged) {
                             trackName.textContent = data.item.name;
@@ -705,6 +1031,11 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                             currentTrackId = newTrackId;
                             currentPlayState = newPlayState;
                             activityDetectedForPolling = true;
+                            
+                            // Reset the playback timer on track change
+                            if (trackChanged) {
+                                startPlaybackTimer();
+                            }
                         }
                         
                         if (progressChanged || trackChanged) { // Update progress if it changed or track changed
@@ -717,7 +1048,6 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                             currentProgressMs = newProgress;
                             if(progressChanged && !trackChanged && !playStateChanged) activityDetectedForPolling = true; // if only progress changed
                         }
-
 
                         if (newAlbumId && (albumChanged || !albumArt.hasChildNodes())) {
                             currentAlbumId = newAlbumId;
@@ -745,10 +1075,7 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                             }
                             activityDetectedForPolling = true;
                         }
-                        // return activityDetectedForPolling || trackChanged || playStateChanged || albumChanged || progressChanged; // Consolidate activity
                         return activityDetectedForPolling;
-
-
                     } else if (currentTrackId !== null) { // Music stopped (no item, but was playing before)
                         currentTrackId = null;
                         currentPlayState = null;
@@ -761,6 +1088,13 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                         progressBar.max = 0;
                         currentTimeDisplay.textContent = '0:00';
                         totalTimeDisplay.textContent = '0:00';
+                        
+                        // Clear the playback timer when playback stops
+                        if (playbackTimerId) {
+                            clearInterval(playbackTimerId);
+                            playbackTimerId = null;
+                        }
+                        
                         return true; // Activity detected - state changed to not playing
                     }
                 } else if (data === null && currentTrackId !== null ) { // API call failed, but we thought it was playing
