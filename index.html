@@ -37,6 +37,7 @@
             --spacing-sm: 10px;
             --spacing-md: 20px;
             --spacing-lg: 30px;
+            --spacing-xl: 50px;
         }
 
         @media (max-width: 768px) {
@@ -47,6 +48,7 @@
                 --btn-utility-size: 40px;
                 --spacing-lg: 24px;
                 --spacing-md: 16px;
+                --spacing-xl: 35px;
             }
         }
 
@@ -247,38 +249,15 @@
             margin-top: 8px;
         }
 
+        /* Styles for controls are defined below */
+
+                /* Controls section at the bottom */
         #controls {
             display: flex;
             justify-content: center;
             align-items: center;
             margin-top: 30px;
-            flex-wrap: wrap;
-        }
-
-        #prev-button {
-            position: fixed;
-            left: 5%;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 100;
-        }
-
-        #next-button {
-            position: fixed;
-            right: 5%;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 100;
-        }
-
-        @media (max-width: 768px) {
-            #prev-button {
-                left: 10px;
-            }
-
-            #next-button {
-                right: 10px;
-            }
+            gap: var(--spacing-lg); /* Increased gap between buttons */
         }
 
         .control-button {
@@ -287,7 +266,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: var(--spacing-md);
+            /* Remove margins as we're using gap in the parent container */
             /* Remove width/height, let padding determine size */
         }
 
@@ -298,14 +277,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 var(--spacing-lg);
+            margin: 0 var(--spacing-xl); /* Adding horizontal margin for more separation */
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-            /* Remove width/height, let content and padding determine size */
+            /* Slightly larger size for the play/pause button */
+            transform: scale(1.2);
         }
 
         #play-pause-button:hover,
         #play-pause-button:active {
-            transform: scale(1.1);
+            transform: scale(1.3); /* Slightly larger on hover from the initial 1.2 scale */
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
         }
 
@@ -494,9 +474,9 @@
             </div>
         </div>
         <div id="controls">
-            <button id="next-button" class="control-button"><span class="icon">skip_next</span></button>
-            <button id="play-pause-button" class="paused"><span class="icon">play_arrow</span></button>
             <button id="prev-button" class="control-button"><span class="icon">skip_previous</span></button>
+            <button id="play-pause-button" class="paused"><span class="icon">play_arrow</span></button>
+            <button id="next-button" class="control-button"><span class="icon">skip_next</span></button>
         </div>
         <button id="mute-toggle-button"><span class="icon">volume_up</span></button>
         <button id="fullscreen-button"><span class="icon">fullscreen</span></button>
