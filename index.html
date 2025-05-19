@@ -143,6 +143,7 @@
             <button id="pause-button">Pause</button>
             <button id="next-button">Next</button>
             <button id="mute-toggle-button">Mute</button>
+            <button id="fullscreen-button">Fullscreen</button>
         </div>
     </div>
 
@@ -203,6 +204,7 @@ const progressBar = document.getElementById('progress-bar');
 const currentTimeDisplay = document.getElementById('current-time');
 const totalTimeDisplay = document.getElementById('total-time');
 const muteToggleButton = document.getElementById('mute-toggle-button');
+const fullscreenButton = document.getElementById('fullscreen-button');
 
 // Get the base URL for redirect URI
 const baseUrl = window.location.origin + window.location.pathname;
@@ -539,6 +541,31 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                 }
                 await spotifyApiCall('PUT', `/me/player/volume?volume_percent=${targetVolume}`);
                 setTimeout(getCurrentlyPlaying, 250); // Refresh state from API
+            });
+            
+            // Fullscreen toggle functionality
+            fullscreenButton.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    // Enter fullscreen
+                    if (playerContainer.requestFullscreen) {
+                        playerContainer.requestFullscreen();
+                    } else if (playerContainer.webkitRequestFullscreen) { /* Safari */
+                        playerContainer.webkitRequestFullscreen();
+                    } else if (playerContainer.msRequestFullscreen) { /* IE11 */
+                        playerContainer.msRequestFullscreen();
+                    }
+                    fullscreenButton.textContent = 'Exit Fullscreen';
+                } else {
+                    // Exit fullscreen
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) { /* Safari */
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) { /* IE11 */
+                        document.msExitFullscreen();
+                    }
+                    fullscreenButton.textContent = 'Fullscreen';
+                }
             });
             
             // Start polling for current track
