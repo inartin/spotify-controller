@@ -1,4 +1,5 @@
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,31 +14,31 @@
             --icon-size-lg: 36px;
             --icon-size-xl: 48px;
             --icon-size-xxl: 80px;
-            
+
             /* Icon size assignments */
             --play-pause-icon-size: var(--icon-size-xxl);
             --prev-next-icon-size: var(--icon-size-xl);
             --utility-icon-size: var(--icon-size-md);
-            
+
             /* Button padding (determines size based on content) */
             --btn-control-padding: 16px;
             --btn-border-radius: 30px;
             --btn-play-border-radius: 50%;
-            
+
             /* Button colors */
             --color-spotify-green: #1db9542a;
             --color-spotify-green-hover: #1ed75f25;
             --color-playing-blue: #1a73e81d;
             --color-button-bg: #1ed75f25;
             --color-button-utility: rgba(40, 40, 40, 0.7);
-            
+
             /* Spacing */
             --spacing-xs: 8px;
             --spacing-sm: 10px;
             --spacing-md: 20px;
             --spacing-lg: 30px;
         }
-        
+
         @media (max-width: 768px) {
             :root {
                 /* Smaller sizes for mobile */
@@ -48,15 +49,16 @@
                 --spacing-md: 16px;
             }
         }
-        
-        html, body {
+
+        html,
+        body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
             overflow-x: hidden;
         }
-        
+
         body {
             font-family: 'Arial', sans-serif;
             background-color: #000000;
@@ -67,19 +69,23 @@
             align-items: center;
             justify-content: center;
         }
+
         #login-container {
             text-align: center;
             padding: 20px;
             max-width: 90%;
         }
+
         #player-container {
             display: none;
             width: 100%;
             max-width: 800px;
             text-align: center;
             padding: 20px;
-            position: relative; /* For absolute positioning of children */
+            position: relative;
+            /* For absolute positioning of children */
         }
+
         /* Fullscreen styling */
         #player-container:fullscreen {
             background-color: #121212;
@@ -88,53 +94,90 @@
             flex-direction: column;
             justify-content: center;
             padding: 20px;
+            position: relative;
+            overflow: hidden;
+            /* Prevent background from causing scrollbars */
         }
+
+        #player-container {
+            --album-bg: none;
+        }
+
+        #player-container:fullscreen::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: var(--album-bg);
+            background-size: cover;
+            background-position: center;
+            filter: blur(20px) brightness(0.4);
+            opacity: 0.7;
+            z-index: -1;
+            transform: scale(1.1);
+            /* Prevent blur edges from showing */
+        }
+
         #player-container:fullscreen #album-art {
             margin: 15px auto;
+            z-index: 1;
         }
+
         #player-container:fullscreen .album-info-container {
             flex-direction: column;
             align-items: center;
+            z-index: 1;
         }
+
         #player-container:fullscreen #track-info {
             margin-left: 0;
             text-align: center;
             margin-top: 15px;
         }
-        
+
         #player-container:fullscreen #prev-button {
             left: 5%;
         }
-        
+
         #player-container:fullscreen #next-button {
             right: 5%;
         }
+
         .hidden {
             display: none !important;
         }
+
         button {
             background-color: var(--color-button-bg);
             color: white;
             border: none;
-            padding: var(--btn-control-padding); /* Bigger buttons */
+            padding: var(--btn-control-padding);
+            /* Bigger buttons */
             border-radius: var(--btn-border-radius);
             font-weight: bold;
             cursor: pointer;
             margin: var(--spacing-sm);
-            font-size: 20px; /* Larger font for buttons */
+            font-size: 20px;
+            /* Larger font for buttons */
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             transition: all 0.2s ease;
         }
-        button:hover, button:active {
+
+        button:hover,
+        button:active {
             background-color: #1ed75f25;
             transform: scale(1.05);
         }
+
         .album-info-container {
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 20px 0;
         }
+
         #album-art {
             width: 300px;
             height: 300px;
@@ -143,12 +186,14 @@
             overflow: hidden;
             flex-shrink: 0;
         }
+
         #track-info {
             margin-left: 30px;
             text-align: left;
             flex-grow: 1;
             max-width: 400px;
         }
+
         #track-name {
             font-size: 28px;
             margin-bottom: 8px;
@@ -156,6 +201,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
         #artist-name {
             font-size: 20px;
             color: #b3b3b3;
@@ -163,11 +209,13 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
         #progress-container {
             margin: 55px auto;
             width: 90%;
             max-width: 800px;
         }
+
         #progress-bar {
             width: 100%;
             cursor: pointer;
@@ -178,6 +226,7 @@
             border-radius: 5px;
             outline: none;
         }
+
         #progress-bar::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
@@ -186,15 +235,18 @@
             background: #1DB954;
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
+
         #time-display {
             display: flex;
             justify-content: space-between;
             font-size: 16px;
-            color: #9AA0A6; /* Modern gray for time display */
+            color: #9AA0A6;
+            /* Modern gray for time display */
             margin-top: 8px;
         }
+
         #controls {
             display: flex;
             justify-content: center;
@@ -202,7 +254,7 @@
             margin-top: 30px;
             flex-wrap: wrap;
         }
-        
+
         #prev-button {
             position: fixed;
             left: 5%;
@@ -210,7 +262,7 @@
             transform: translateY(-50%);
             z-index: 100;
         }
-        
+
         #next-button {
             position: fixed;
             right: 5%;
@@ -218,16 +270,17 @@
             transform: translateY(-50%);
             z-index: 100;
         }
-        
+
         @media (max-width: 768px) {
             #prev-button {
                 left: 10px;
             }
-            
+
             #next-button {
                 right: 10px;
             }
         }
+
         .control-button {
             padding: var(--btn-control-padding);
             border-radius: 50%;
@@ -237,6 +290,7 @@
             margin: var(--spacing-md);
             /* Remove width/height, let padding determine size */
         }
+
         #play-pause-button {
             background-color: #1db9543a;
             padding: var(--btn-control-padding);
@@ -248,11 +302,15 @@
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
             /* Remove width/height, let content and padding determine size */
         }
-        #play-pause-button:hover, #play-pause-button:active {
+
+        #play-pause-button:hover,
+        #play-pause-button:active {
             transform: scale(1.1);
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
         }
-        #mute-toggle-button, #fullscreen-button {
+
+        #mute-toggle-button,
+        #fullscreen-button {
             position: fixed;
             background-color: rgba(40, 40, 40, 0.7);
             padding: var(--btn-control-padding);
@@ -264,20 +322,22 @@
             z-index: 1000;
             /* Remove width/height, let content and padding determine size */
         }
-        
+
         #mute-toggle-button {
             bottom: var(--spacing-md);
             right: var(--spacing-md);
         }
-        
+
         #fullscreen-button {
             top: var(--spacing-md);
             right: var(--spacing-md);
         }
-        
-        #mute-toggle-button:hover, #fullscreen-button:hover {
+
+        #mute-toggle-button:hover,
+        #fullscreen-button:hover {
             background-color: rgba(60, 60, 60, 0.9);
         }
+
         .setup-instructions {
             background-color: #282828;
             padding: 20px;
@@ -286,45 +346,55 @@
             max-width: 600px;
             text-align: left;
         }
+
         .setup-instructions code {
             background-color: #121212;
             padding: 2px 5px;
             border-radius: 3px;
         }
+
         @media (max-width: 768px) {
             :root {
-                --unit: 7px; /* Slightly smaller base unit for mobile */
+                --unit: 7px;
+                /* Slightly smaller base unit for mobile */
                 /* All derived values will adjust automatically */
             }
-            
+
             #album-art {
                 width: 200px;
                 height: 200px;
             }
+
             .album-info-container {
                 flex-direction: column;
             }
+
             #track-info {
                 margin-left: 0;
                 margin-top: var(--spacing-lg);
                 text-align: center;
             }
+
             button {
                 font-size: var(--icon-size-sm);
             }
+
             #track-name {
                 font-size: 24px;
             }
+
             #artist-name {
                 font-size: 18px;
             }
         }
+
         /* Icon styling */
         .icon {
             font-family: 'Material Icons';
             font-weight: normal;
             font-style: normal;
-            font-size: var(--icon-size-md); /* Default size */
+            font-size: var(--icon-size-md);
+            /* Default size */
             line-height: 1;
             letter-spacing: normal;
             text-transform: none;
@@ -334,58 +404,73 @@
             direction: ltr;
             -webkit-font-smoothing: antialiased;
         }
-        
+
         /* Control buttons icon sizes */
         #prev-button .icon {
             font-size: var(--prev-next-icon-size);
         }
-        
+
         #play-pause-button .icon {
             font-size: var(--play-pause-icon-size);
         }
-        
+
         #next-button .icon {
             font-size: var(--prev-next-icon-size);
         }
-        
+
         /* Utility buttons icon sizes */
         #mute-toggle-button .icon {
             font-size: var(--utility-icon-size);
         }
-        
+
         #fullscreen-button .icon {
             font-size: var(--utility-icon-size);
         }
-        
+
         /* Play button states */
         #play-pause-button.playing {
-            background-color: #1a73e81d; /* Modern blue when playing/pause button */
+            background-color: #1a73e81d;
+            /* Modern blue when playing/pause button */
         }
+
         #play-pause-button.paused {
-            background-color: #1db9542a; /* Original Spotify green when paused/play button */
+            background-color: #1db9542a;
+            /* Original Spotify green when paused/play button */
+        }
+
+        /* Add z-index to all foreground elements to ensure they're above the blurred background */
+        #player-container:fullscreen #track-info,
+        #player-container:fullscreen #progress-container,
+        #player-container:fullscreen #controls,
+        #player-container:fullscreen #mute-toggle-button,
+        #player-container:fullscreen #fullscreen-button {
+            z-index: 1;
         }
     </style>
 </head>
+
 <body>
     <div id="login-container">
         <h1>Spotify Controller</h1>
-            <div class="setup-instructions">
-                <h2>First-time Setup:</h2>
-                <ol>
-                    <li>Create a Spotify Developer application at 
-                    <a href="https://developer.spotify.com/dashboard" target="_blank">developer.spotify.com/dashboard</a></li>
-                    <li>Set the Redirect URI to your current URL: <code id="redirect-uri">loading...</code>
-                        <button id="copy-uri" style="padding: 2px 8px; margin-left: 5px;">Copy</button>
-                    </li>
-                    <li>Copy your Client ID</li>
-                    <li>You can either:
-                        <ul>
-                            <li>Enter it below and click "Save Client ID", or</li>
-                            <li>Append it to the URL like: <code id="url-example">loading...</code></li>
-                        </ul>
-                    </li>
-                </ol>
-            </div>
+        <div class="setup-instructions">
+            <h2>First-time Setup:</h2>
+            <ol>
+                <li>Create a Spotify Developer application at
+                    <a href="https://developer.spotify.com/dashboard"
+                        target="_blank">developer.spotify.com/dashboard</a>
+                </li>
+                <li>Set the Redirect URI to your current URL: <code id="redirect-uri">loading...</code>
+                    <button id="copy-uri" style="padding: 2px 8px; margin-left: 5px;">Copy</button>
+                </li>
+                <li>Copy your Client ID</li>
+                <li>You can either:
+                    <ul>
+                        <li>Enter it below and click "Save Client ID", or</li>
+                        <li>Append it to the URL like: <code id="url-example">loading...</code></li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
         <div>
             <input type="text" id="client-id-input" placeholder="Enter your Spotify Client ID">
             <button id="save-client-id">Save Client ID</button>
@@ -428,7 +513,7 @@
             'user-read-playback-state',
             'user-modify-playback-state'
         ];
-        
+
         // Generate a random string for the state parameter
         function generateRandomString(length) {
             let text = '';
@@ -438,56 +523,56 @@
             }
             return text;
         }
-        
+
         // Generate a code verifier (random string between 43-128 chars)
         function generateCodeVerifier() {
             return generateRandomString(128);
         }
-        
+
         // Generate code challenge from verifier using SHA-256
         async function generateCodeChallenge(codeVerifier) {
             const encoder = new TextEncoder();
             const data = encoder.encode(codeVerifier);
             const digest = await window.crypto.subtle.digest('SHA-256', data);
-            
+
             return btoa(String.fromCharCode(...new Uint8Array(digest)))
                 .replace(/=/g, '')
                 .replace(/\+/g, '-')
                 .replace(/\//g, '_');
         }
-        
+
         // DOM Elements
-const loginContainer = document.getElementById('login-container');
-const playerContainer = document.getElementById('player-container');
-const clientIdInput = document.getElementById('client-id-input');
-const saveClientIdButton = document.getElementById('save-client-id');
-const loginButton = document.getElementById('login-button');
-const redirectUriElement = document.getElementById('redirect-uri');
-const prevButton = document.getElementById('prev-button');
-const playPauseButton = document.getElementById('play-pause-button');
-const nextButton = document.getElementById('next-button');
-const albumArt = document.getElementById('album-art');
-const trackName = document.getElementById('track-name');
-const artistName = document.getElementById('artist-name');
-const progressBar = document.getElementById('progress-bar');
-const currentTimeDisplay = document.getElementById('current-time');
-const totalTimeDisplay = document.getElementById('total-time');
-const muteToggleButton = document.getElementById('mute-toggle-button');
-const fullscreenButton = document.getElementById('fullscreen-button');
+        const loginContainer = document.getElementById('login-container');
+        const playerContainer = document.getElementById('player-container');
+        const clientIdInput = document.getElementById('client-id-input');
+        const saveClientIdButton = document.getElementById('save-client-id');
+        const loginButton = document.getElementById('login-button');
+        const redirectUriElement = document.getElementById('redirect-uri');
+        const prevButton = document.getElementById('prev-button');
+        const playPauseButton = document.getElementById('play-pause-button');
+        const nextButton = document.getElementById('next-button');
+        const albumArt = document.getElementById('album-art');
+        const trackName = document.getElementById('track-name');
+        const artistName = document.getElementById('artist-name');
+        const progressBar = document.getElementById('progress-bar');
+        const currentTimeDisplay = document.getElementById('current-time');
+        const totalTimeDisplay = document.getElementById('total-time');
+        const muteToggleButton = document.getElementById('mute-toggle-button');
+        const fullscreenButton = document.getElementById('fullscreen-button');
 
-// Get the base URL for redirect URI
-const baseUrl = window.location.origin + window.location.pathname;
+        // Get the base URL for redirect URI
+        const baseUrl = window.location.origin + window.location.pathname;
 
-// Set the redirect URI text and URL example
-redirectUriElement.textContent = baseUrl;
-const urlExample = document.getElementById('url-example');
-urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
-        
+        // Set the redirect URI text and URL example
+        redirectUriElement.textContent = baseUrl;
+        const urlExample = document.getElementById('url-example');
+        urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
+
         // Check URL hash for client ID first
         let clientId;
         const urlParams = new URLSearchParams(window.location.hash.substring(1));
         const urlClientId = urlParams.get('client_id');
-        
+
         if (urlClientId) {
             // Found client ID in URL, save it to localStorage
             clientId = urlClientId;
@@ -504,7 +589,7 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                 loginButton.classList.remove('hidden');
             }
         }
-        
+
         // Save Client ID to localStorage
         saveClientIdButton.addEventListener('click', () => {
             const newClientId = clientIdInput.value.trim();
@@ -517,25 +602,25 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                 alert('Please enter a valid Client ID');
             }
         });
-        
+
         // Handle Login
         loginButton.addEventListener('click', async () => {
             if (!clientId) {
                 alert('Please enter your Spotify Client ID first');
                 return;
             }
-            
+
             // Generate and store PKCE code verifier
             const codeVerifier = generateCodeVerifier();
             localStorage.setItem('spotify_code_verifier', codeVerifier);
-            
+
             // Generate code challenge from verifier
             const codeChallenge = await generateCodeChallenge(codeVerifier);
-            
+
             // Generate state parameter
             const state = generateRandomString(16);
             localStorage.setItem('spotify_auth_state', state);
-            
+
             const authUrl = new URL(SPOTIFY_AUTH_ENDPOINT);
             const params = {
                 client_id: clientId,
@@ -547,44 +632,44 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                 state: state,
                 show_dialog: true
             };
-            
+
             authUrl.search = new URLSearchParams(params).toString();
             window.location.href = authUrl.toString();
         });
-        
+
         // Parse query parameters from URL
         function getQueryParams() {
             const queryParams = {};
             const queryString = window.location.search.substring(1);
-            
+
             if (!queryString) {
                 return queryParams;
             }
-            
+
             queryString.split('&').forEach(pair => {
                 const [key, value] = pair.split('=');
                 queryParams[key] = decodeURIComponent(value);
             });
-            
+
             return queryParams;
         }
-        
+
         // Exchange authorization code for an access token
         async function exchangeCodeForToken(code) {
             const clientId = localStorage.getItem('spotify_client_id');
             const codeVerifier = localStorage.getItem('spotify_code_verifier');
-            
+
             if (!clientId || !codeVerifier) {
                 throw new Error('Missing client ID or code verifier');
             }
-            
+
             const params = new URLSearchParams();
             params.append('client_id', clientId);
             params.append('grant_type', 'authorization_code');
             params.append('code', code);
             params.append('redirect_uri', baseUrl);
             params.append('code_verifier', codeVerifier);
-            
+
             const response = await fetch(SPOTIFY_TOKEN_ENDPOINT, {
                 method: 'POST',
                 headers: {
@@ -592,14 +677,14 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                 },
                 body: params
             });
-            
+
             if (!response.ok) {
                 throw new Error(`Token request failed: ${response.status}`);
             }
-            
+
             return await response.json();
         }
-        
+
         // Initialize app
         async function initApp() {
             // Check if we have a code in the URL (redirect from Spotify auth)
@@ -607,47 +692,47 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
             const code = queryParams.code;
             const state = queryParams.state;
             const error = queryParams.error;
-            
+
             // Check for errors
             if (error) {
                 console.error(`Authorization error: ${error}`);
                 alert(`Authorization failed: ${error}`);
                 return;
             }
-            
+
             // Check for authorization code
             if (code) {
                 try {
-            // Remove the code from the URL without changing the base URL
-            const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.delete('code');
-            currentUrl.searchParams.delete('state');
-            window.history.replaceState({}, document.title, currentUrl.toString());
-                    
+                    // Remove the code from the URL without changing the base URL
+                    const currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.delete('code');
+                    currentUrl.searchParams.delete('state');
+                    window.history.replaceState({}, document.title, currentUrl.toString());
+
                     // Verify state parameter
                     const storedState = localStorage.getItem('spotify_auth_state');
                     if (state !== storedState) {
                         throw new Error('State mismatch, possible CSRF attack');
                     }
-                    
+
                     // Exchange the code for an access token
                     const data = await exchangeCodeForToken(code);
-                    
+
                     // Store token and expiration
                     const accessToken = data.access_token;
                     const refreshToken = data.refresh_token;
                     const expiresIn = data.expires_in;
                     const tokenTimestamp = Date.now();
-                    
+
                     localStorage.setItem('spotify_access_token', accessToken);
                     localStorage.setItem('spotify_refresh_token', refreshToken);
                     localStorage.setItem('spotify_token_timestamp', tokenTimestamp);
                     localStorage.setItem('spotify_token_expires_in', expiresIn);
-                    
+
                     // Show player UI
                     loginContainer.style.display = 'none';
                     playerContainer.style.display = 'block';
-                    
+
                     // Set up player
                     setupPlayer(accessToken);
                     return;
@@ -656,21 +741,21 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                     alert(`Authentication error: ${error.message}`);
                 }
             }
-            
+
             // If no code in URL, check if we have a valid stored token
             const storedToken = localStorage.getItem('spotify_access_token');
             const storedTimestamp = localStorage.getItem('spotify_token_timestamp');
             const storedExpiresIn = localStorage.getItem('spotify_token_expires_in');
-            
+
             if (storedToken && storedTimestamp && storedExpiresIn) {
                 const now = Date.now();
                 const elapsed = (now - storedTimestamp) / 1000;
-                
+
                 if (elapsed < storedExpiresIn) {
                     // Token still valid
                     loginContainer.style.display = 'none';
                     playerContainer.style.display = 'block';
-                    
+
                     // Set up player
                     setupPlayer(storedToken);
                     return;
@@ -678,11 +763,11 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                     // Token expired, try to refresh it
                     try {
                         await refreshAccessToken();
-                        
+
                         // If refresh successful, set up player
                         loginContainer.style.display = 'none';
                         playerContainer.style.display = 'block';
-                        
+
                         setupPlayer(localStorage.getItem('spotify_access_token'));
                         return;
                     } catch (error) {
@@ -691,26 +776,26 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                     }
                 }
             }
-            
+
             // If we reach here, we need to login again
             loginContainer.style.display = 'block';
             playerContainer.style.display = 'none';
         }
-        
+
         // Refresh the access token using the refresh token
         async function refreshAccessToken() {
             const clientId = localStorage.getItem('spotify_client_id');
             const refreshToken = localStorage.getItem('spotify_refresh_token');
-            
+
             if (!clientId || !refreshToken) {
                 throw new Error('Missing client ID or refresh token');
             }
-            
+
             const params = new URLSearchParams();
             params.append('client_id', clientId);
             params.append('grant_type', 'refresh_token');
             params.append('refresh_token', refreshToken);
-            
+
             const response = await fetch(SPOTIFY_TOKEN_ENDPOINT, {
                 method: 'POST',
                 headers: {
@@ -718,26 +803,26 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                 },
                 body: params
             });
-            
+
             if (!response.ok) {
                 throw new Error(`Refresh token request failed: ${response.status}`);
             }
-            
+
             const data = await response.json();
-            
+
             // Update stored tokens
             localStorage.setItem('spotify_access_token', data.access_token);
             localStorage.setItem('spotify_token_timestamp', Date.now());
             localStorage.setItem('spotify_token_expires_in', data.expires_in);
-            
+
             // If a new refresh token is provided, update it
             if (data.refresh_token) {
                 localStorage.setItem('spotify_refresh_token', data.refresh_token);
             }
-            
+
             return data;
         }
-        
+
         // Format time from ms to M:SS
         function formatTime(ms) {
             if (isNaN(ms) || ms < 0) return "0:00";
@@ -764,7 +849,7 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                 spotifyApiCall('POST', '/me/player/previous');
                 setTimeout(getCurrentlyPlaying, 500);
             });
-            
+
             playPauseButton.addEventListener('click', () => {
                 if (currentPlayState) {
                     // If currently playing, pause
@@ -781,12 +866,12 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                 }
                 setTimeout(getCurrentlyPlaying, 500);
             });
-            
+
             nextButton.addEventListener('click', () => {
                 spotifyApiCall('POST', '/me/player/next');
                 setTimeout(getCurrentlyPlaying, 500);
             });
-            
+
             progressBar.addEventListener('input', () => {
                 // Optional: Could provide visual feedback while dragging
                 // For now, we only seek when the user releases (change event)
@@ -798,7 +883,7 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                 // Update UI optimistically or wait for polling
                 setTimeout(getCurrentlyPlaying, 250); // Quicker update after seek
             });
-            
+
             muteToggleButton.addEventListener('click', async () => {
                 let targetVolume;
                 if (isCurrentlyMuted) {
@@ -818,7 +903,7 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                 await spotifyApiCall('PUT', `/me/player/volume?volume_percent=${targetVolume}`);
                 setTimeout(getCurrentlyPlaying, 250); // Refresh state from API
             });
-            
+
             // Fullscreen toggle functionality
             fullscreenButton.addEventListener('click', () => {
                 if (!document.fullscreenElement) {
@@ -831,6 +916,9 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                         playerContainer.msRequestFullscreen();
                     }
                     fullscreenButton.querySelector('.icon').textContent = 'fullscreen_exit';
+
+                    // Try to get current artist data for background or fallback to album art
+                    getCurrentTrackArtistForBackground();
                 } else {
                     // Exit fullscreen
                     if (document.exitFullscreen) {
@@ -843,24 +931,26 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                     fullscreenButton.querySelector('.icon').textContent = 'fullscreen';
                 }
             });
-            
+
             // Listen for fullscreen change events (like when user presses Escape)
             document.addEventListener('fullscreenchange', () => {
                 if (!document.fullscreenElement) {
                     fullscreenButton.querySelector('.icon').textContent = 'fullscreen';
                 } else {
                     fullscreenButton.querySelector('.icon').textContent = 'fullscreen_exit';
+                    // Update background when entering fullscreen mode
+                    getCurrentTrackArtistForBackground();
                 }
             });
-            
+
             // Start polling for current track
             getCurrentlyPlaying();
-            
+
             // Adaptive polling - increase interval when inactive
             let pollingInterval = 5000; // Start with 5 seconds
             const maxPollingInterval = 15000; // Max 15 seconds between polls
             let inactiveTime = 0;
-            
+
             function adaptivePolling() {
                 getCurrentlyPlaying()
                     .then(hasActivity => {
@@ -879,40 +969,40 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                         setTimeout(adaptivePolling, pollingInterval);
                     });
             }
-            
+
             // Start adaptive polling
             adaptivePolling();
-            
+
             // Start separate timer for updating playback position
             startPlaybackTimer();
         }
-        
+
         // Timer for updating the playback position without API calls
         let playbackTimerId = null;
-        
+
         function startPlaybackTimer() {
             // Clear any existing timer
             if (playbackTimerId) {
                 clearInterval(playbackTimerId);
             }
-            
+
             // Update playback position every second if music is playing
             playbackTimerId = setInterval(() => {
                 if (currentPlayState) {
                     // Only increment if currently playing
                     currentProgressMs += 1000; // Add 1 second
-                    
+
                     // Update UI
                     progressBar.value = currentProgressMs;
                     currentTimeDisplay.textContent = formatTime(currentProgressMs);
                 }
             }, 1000);
         }
-        
+
         // Make API calls to Spotify
         async function spotifyApiCall(method, endpoint, body = null) {
             const token = localStorage.getItem('spotify_access_token');
-            
+
             try {
                 const response = await fetch(`${SPOTIFY_API_ENDPOINT}${endpoint}`, {
                     method: method,
@@ -922,7 +1012,7 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                     },
                     body: body ? JSON.stringify(body) : null
                 });
-                
+
                 if (response.status === 401) {
                     // Token expired
                     localStorage.removeItem('spotify_access_token');
@@ -930,18 +1020,18 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                     window.location.reload();
                     return null;
                 }
-                
+
                 if (response.status === 204) {
                     return true; // Success but no content
                 }
-                
+
                 if (response.ok) {
                     // Only try to parse as JSON if there's content
                     if (response.status !== 204) {
                         const text = await response.text();
                         // Check if there's any content to parse
                         if (!text) return null;
-                        
+
                         try {
                             // Check if the response starts with a valid JSON character
                             if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
@@ -966,7 +1056,7 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                 return null;
             }
         }
-        
+
         // Get and display currently playing track
         async function getCurrentlyPlaying() {
             try {
@@ -1018,7 +1108,7 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                                 playPauseButton.classList.remove('playing');
                                 playPauseButton.classList.add('paused');
                             }
-                            
+
                             // Restart the playback timer when play state changes
                             startPlaybackTimer();
                         }
@@ -1029,22 +1119,27 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                             currentTrackId = newTrackId;
                             currentPlayState = newPlayState;
                             activityDetectedForPolling = true;
-                            
+
                             // Reset the playback timer on track change
                             if (trackChanged) {
                                 startPlaybackTimer();
+
+                                // Fetch artist image when track changes if we're in fullscreen
+                                if (document.fullscreenElement && data.item.artists && data.item.artists.length > 0) {
+                                    fetchArtistImage(data.item.artists[0].id);
+                                }
                             }
                         }
-                        
+
                         if (progressChanged || trackChanged) { // Update progress if it changed or track changed
-                             if (data.item.duration_ms) {
+                            if (data.item.duration_ms) {
                                 progressBar.max = data.item.duration_ms;
                                 totalTimeDisplay.textContent = formatTime(data.item.duration_ms);
                             }
                             progressBar.value = newProgress;
                             currentTimeDisplay.textContent = formatTime(newProgress);
                             currentProgressMs = newProgress;
-                            if(progressChanged && !trackChanged && !playStateChanged) activityDetectedForPolling = true; // if only progress changed
+                            if (progressChanged && !trackChanged && !playStateChanged) activityDetectedForPolling = true; // if only progress changed
                         }
 
                         if (newAlbumId && (albumChanged || !albumArt.hasChildNodes())) {
@@ -1060,9 +1155,9 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                                 img.onerror = () => {
                                     localStorage.removeItem(albumArtCacheKey);
                                     if (data.item.album) {
-                                       fetchAndSetAlbumArt(data.item.album, newAlbumId);
+                                        fetchAndSetAlbumArt(data.item.album, newAlbumId);
                                     } else {
-                                       albumArt.innerHTML = '';
+                                        albumArt.innerHTML = '';
                                     }
                                 };
                                 img.src = cachedArtUrl;
@@ -1086,28 +1181,109 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                         progressBar.max = 0;
                         currentTimeDisplay.textContent = '0:00';
                         totalTimeDisplay.textContent = '0:00';
-                        
+
                         // Clear the playback timer when playback stops
                         if (playbackTimerId) {
                             clearInterval(playbackTimerId);
                             playbackTimerId = null;
                         }
-                        
+
                         return true; // Activity detected - state changed to not playing
                     }
-                } else if (data === null && currentTrackId !== null ) { // API call failed, but we thought it was playing
-                     // If API call fails (data is null), and we thought a track was playing, treat as state change.
+                } else if (data === null && currentTrackId !== null) { // API call failed, but we thought it was playing
+                    // If API call fails (data is null), and we thought a track was playing, treat as state change.
                     currentTrackId = null; // Reset to trigger login/refresh if needed by other logic
                     return true; // Indicate activity to potentially slow down polling or re-check auth
                 }
-                
+
                 return activityDetectedForPolling; // Return if any activity (mute, track, playstate, album, progress) was detected
             } catch (error) {
                 console.error('Error updating player:', error);
                 return false; // No activity on error
             }
         }
+
+        // Get current track artist for background
+        async function getCurrentTrackArtistForBackground() {
+            try {
+                // Get currently playing track
+                const data = await spotifyApiCall('GET', '/me/player/currently-playing');
+                
+                if (data && data.item && data.item.artists && data.item.artists.length > 0) {
+                    // Get primary artist ID
+                    const artistId = data.item.artists[0].id;
+                    if (artistId) {
+                        // Fetch and use artist image
+                        fetchArtistImage(artistId);
+                    } else {
+                        // Fallback to album art
+                        updateFullscreenBackground();
+                    }
+                } else {
+                    // No current track or artist, fallback to album art
+                    updateFullscreenBackground();
+                }
+            } catch (error) {
+                console.error("Error getting current track artist:", error);
+                // Fallback to album art
+                updateFullscreenBackground();
+            }
+        }
         
+        // Helper function to update the fullscreen background with current album art
+        function updateFullscreenBackground() {
+            if (document.fullscreenElement && currentAlbumId) {
+                const albumArtCacheKey = `spotify_album_art_${currentAlbumId}`;
+                const cachedArtUrl = localStorage.getItem(albumArtCacheKey);
+
+                if (cachedArtUrl) {
+                    // Use CSS custom property for background
+                    playerContainer.style.setProperty('--album-bg', `url(${cachedArtUrl})`);
+                }
+            }
+        }
+
+        // Fetch artist image and use it for background
+        async function fetchArtistImage(artistId) {
+            if (!artistId) return;
+
+            // Check if we have a cached artist image
+            const artistImageCacheKey = `spotify_artist_image_${artistId}`;
+            const cachedArtistImageUrl = localStorage.getItem(artistImageCacheKey);
+
+            if (cachedArtistImageUrl) {
+                // Use cached image
+                playerContainer.style.setProperty('--album-bg', `url(${cachedArtistImageUrl})`);
+                return;
+            }
+
+            // Make API call to get artist info with images
+            try {
+                const artistData = await spotifyApiCall('GET', `/artists/${artistId}`);
+
+                if (artistData && artistData.images && artistData.images.length > 0) {
+                    // Get the highest resolution image (first in the array)
+                    const artistImageUrl = artistData.images[0].url;
+
+                    // Cache the artist image URL
+                    try {
+                        localStorage.setItem(artistImageCacheKey, artistImageUrl);
+                    } catch (e) {
+                        console.warn("Could not cache artist image, localStorage might be full.", e);
+                    }
+
+                    // Set as background if in fullscreen
+                    if (document.fullscreenElement) {
+                        playerContainer.style.setProperty('--album-bg', `url(${artistImageUrl})`);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching artist image:", error);
+                // Fallback to album art if artist image fetch fails
+                updateFullscreenBackground();
+            }
+        }
+
         // Helper function to fetch, display, and cache album art
         function fetchAndSetAlbumArt(albumData, albumId) {
             if (albumData && albumData.images && albumData.images.length > 0) {
@@ -1119,6 +1295,12 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                     albumArt.innerHTML = `<img src="${imageUrl}" alt="Album Art" style="width:100%; height:100%; border-radius:8px;">`;
                     try {
                         localStorage.setItem(albumArtCacheKey, imageUrl);
+
+                        // Update fullscreen background if in fullscreen mode
+                        if (document.fullscreenElement) {
+                            playerContainer.style.setProperty('--album-bg', `url(${imageUrl})`);
+                            // Use a custom property instead of direct style to avoid querySelector in fullscreen
+                        }
                     } catch (e) {
                         console.warn("Could not cache album art, localStorage might be full.", e);
                     }
@@ -1132,9 +1314,10 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
                 albumArt.innerHTML = ''; // No art available for this album
             }
         }
-        
+
         // Initialize the app when DOM is loaded
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
+
 </html>
