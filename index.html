@@ -132,6 +132,9 @@
             'user-modify-playback-state'
         ];
         
+        // Set the correct redirect URI - define this at global scope
+        const baseUrl = window.location.href.split('#')[0];
+        
         // DOM Elements
         const loginContainer = document.getElementById('login-container');
         const playerContainer = document.getElementById('player-container');
@@ -147,8 +150,7 @@
         const trackName = document.getElementById('track-name');
         const artistName = document.getElementById('artist-name');
         
-        // Set the correct redirect URI and URL example
-        const baseUrl = window.location.href.split('#')[0];
+        // Set the redirect URI text and URL example
         redirectUriElement.textContent = baseUrl;
         const urlExample = document.getElementById('url-example');
         urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
