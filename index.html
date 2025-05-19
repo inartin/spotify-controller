@@ -464,7 +464,33 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
             
             // Start polling for current track
             getCurrentlyPlaying();
-            setInterval(getCurrentlyPlaying, 5000);
+            
+            // Adaptive polling - increase interval when inactive
+            let pollingInterval = 3000; // Start with 3 seconds
+            const maxPollingInterval = 10000; // Max 10 seconds between polls
+            let inactiveTime = 0;
+            
+            function adaptivePolling() {
+                getCurrentlyPlaying()
+                    .then(hasActivity => {
+                        // If track changed or playback state changed
+                        if (hasActivity) {
+                            inactiveTime = 0;
+                            pollingInterval = 3000; // Reset to 3 seconds
+                        } else {
+                            inactiveTime += pollingInterval;
+                            // Gradually increase polling interval when inactive
+                            if (inactiveTime > 30000) { // After 30 seconds of inactivity
+                                pollingInterval = Math.min(pollingInterval * 1.5, maxPollingInterval);
+                            }
+                        }
+                        // Schedule next check
+                        setTimeout(adaptivePolling, pollingInterval);
+                    });
+            }
+            
+            // Start adaptive polling
+            adaptivePolling();
         }
         
         // Make API calls to Spotify
@@ -528,45 +554,102 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
         // Track state to avoid unnecessary UI updates
         let currentTrackId = null;
         let currentPlayState = null;
+        let currentAlbumId = null; // Added to track current album for art caching
         
         // Get and display currently playing track
         async function getCurrentlyPlaying() {
             try {
                 const data = await spotifyApiCall('GET', '/me/player/currently-playing');
                 
-                // Only update UI if we have valid data
                 if (data && data.item) {
-                    // Check if it's the same track to avoid unnecessary updates
-                    if (currentTrackId !== data.item.id || currentPlayState !== data.is_playing) {
-                        // Store current state
-                        currentTrackId = data.item.id;
-                        currentPlayState = data.is_playing;
-                        
-                        // Update UI with track info
+                    const newTrackId = data.item.id;
+                    const newAlbumId = data.item.album ? data.item.album.id : null;
+                    const newPlayState = data.is_playing;
+
+                    const trackChanged = currentTrackId !== newTrackId;
+                    const playStateChanged = currentPlayState !== newPlayState;
+                    const albumChanged = newAlbumId !== currentAlbumId;
+
+                    let activityForPolling = false;
+
+                    if (trackChanged || playStateChanged) {
                         trackName.textContent = data.item.name;
                         artistName.textContent = data.item.artists.map(artist => artist.name).join(', ');
-                        
-                        // Update album art only if we have valid images
-                        if (data.item.album && data.item.album.images && data.item.album.images.length > 0) {
-                            // Pre-load the image before updating the DOM
+                        currentTrackId = newTrackId;
+                        currentPlayState = newPlayState;
+                        activityForPolling = true;
+                    }
+
+                    // Handle Album Art: Update if album changed or if no art is currently displayed
+                    if (newAlbumId && (albumChanged || !albumArt.hasChildNodes())) {
+                        currentAlbumId = newAlbumId; // Update currentAlbumId
+                        activityForPolling = true; // Album change is also an activity
+
+                        const albumArtCacheKey = `spotify_album_art_${newAlbumId}`;
+                        let cachedArtUrl = localStorage.getItem(albumArtCacheKey);
+
+                        if (cachedArtUrl) {
                             const img = new Image();
                             img.onload = () => {
-                                albumArt.innerHTML = `<img src="${data.item.album.images[0].url}" alt="Album Art" style="width:100%; height:100%; border-radius:8px;">`;
+                                albumArt.innerHTML = `<img src="${cachedArtUrl}" alt="Album Art" style="width:100%; height:100%; border-radius:8px;">`;
                             };
-                            img.src = data.item.album.images[0].url;
+                            img.onerror = () => { // If cached URL fails, clear cache and fetch new
+                                console.warn('Cached album art failed to load, fetching fresh.', cachedArtUrl);
+                                localStorage.removeItem(albumArtCacheKey);
+                                if (data.item.album) { // Ensure album data is still relevant
+                                   fetchAndSetAlbumArt(data.item.album, newAlbumId);
+                                } else {
+                                   albumArt.innerHTML = ''; // Clear if no album data
+                                }
+                            };
+                            img.src = cachedArtUrl;
+                        } else if (data.item.album && data.item.album.images && data.item.album.images.length > 0) {
+                            fetchAndSetAlbumArt(data.item.album, newAlbumId);
+                        } else {
+                            albumArt.innerHTML = ''; // No album art available
                         }
                     }
-                } else if (currentTrackId !== null) {
-                    // Only update if we're transitioning from playing to not playing
+                    return activityForPolling;
+
+                } else if (currentTrackId !== null) { // Music stopped
                     currentTrackId = null;
                     currentPlayState = null;
+                    currentAlbumId = null; // Reset album ID
                     trackName.textContent = 'Not Playing';
                     artistName.textContent = '-';
-                    albumArt.innerHTML = '';
+                    albumArt.innerHTML = ''; // Clear album art
+                    return true; // Activity detected - state changed to not playing
                 }
+                
+                return false; // No activity detected
             } catch (error) {
                 console.error('Error updating player:', error);
-                // Don't update UI on errors to prevent flickering
+                return false; // Don't update UI on errors to prevent flickering
+            }
+        }
+        
+        // Helper function to fetch, display, and cache album art
+        function fetchAndSetAlbumArt(albumData, albumId) {
+            if (albumData && albumData.images && albumData.images.length > 0) {
+                const imageUrl = albumData.images[0].url;
+                const albumArtCacheKey = `spotify_album_art_${albumId}`;
+
+                const img = new Image();
+                img.onload = () => {
+                    albumArt.innerHTML = `<img src="${imageUrl}" alt="Album Art" style="width:100%; height:100%; border-radius:8px;">`;
+                    try {
+                        localStorage.setItem(albumArtCacheKey, imageUrl);
+                    } catch (e) {
+                        console.warn("Could not cache album art, localStorage might be full.", e);
+                    }
+                };
+                img.onerror = () => {
+                    console.error("Failed to load album art image:", imageUrl);
+                    albumArt.innerHTML = ''; // Clear art on error
+                };
+                img.src = imageUrl;
+            } else {
+                albumArt.innerHTML = ''; // No art available for this album
             }
         }
         
