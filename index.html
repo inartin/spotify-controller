@@ -1003,11 +1003,18 @@
                 });
 
                 if (response.status === 401) {
-                    // Token expired
-                    localStorage.removeItem('spotify_access_token');
-                    alert('Your session has expired. Please log in again.');
-                    window.location.reload();
-                    return null;
+                    // Try to refresh the token instead of immediately showing expired message
+                    try {
+                        await refreshAccessToken();
+                        // If refresh successful, retry the original API call
+                        return spotifyApiCall(method, endpoint, body);
+                    } catch (refreshError) {
+                        // Only if refresh fails, show the expired message
+                        localStorage.removeItem('spotify_access_token');
+                        alert('Your session has expired. Please log in again.');
+                        window.location.reload();
+                        return null;
+                    }
                 }
 
                 if (response.status === 204) {
