@@ -60,6 +60,22 @@
             font-size: 18px;
             color: #b3b3b3;
         }
+        #progress-container {
+            margin: 15px auto;
+            width: 80%;
+            max-width: 400px;
+        }
+        #progress-bar {
+            width: 100%;
+            cursor: pointer;
+        }
+        #time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #b3b3b3;
+            margin-top: 5px;
+        }
         #controls {
             display: flex;
             justify-content: center;
@@ -114,11 +130,19 @@
             <div id="track-name">Not Playing</div>
             <div id="artist-name">-</div>
         </div>
+        <div id="progress-container">
+            <input type="range" id="progress-bar" value="0" style="width: 100%;">
+            <div id="time-display">
+                <span id="current-time">0:00</span>
+                <span id="total-time">0:00</span>
+            </div>
+        </div>
         <div id="controls">
             <button id="prev-button">Previous</button>
             <button id="play-button">Play</button>
             <button id="pause-button">Pause</button>
             <button id="next-button">Next</button>
+            <button id="mute-toggle-button">Mute</button>
         </div>
     </div>
 
@@ -175,6 +199,10 @@ const nextButton = document.getElementById('next-button');
 const albumArt = document.getElementById('album-art');
 const trackName = document.getElementById('track-name');
 const artistName = document.getElementById('artist-name');
+const progressBar = document.getElementById('progress-bar');
+const currentTimeDisplay = document.getElementById('current-time');
+const totalTimeDisplay = document.getElementById('total-time');
+const muteToggleButton = document.getElementById('mute-toggle-button');
 
 // Get the base URL for redirect URI
 const baseUrl = window.location.origin + window.location.pathname;
@@ -439,6 +467,25 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
             return data;
         }
         
+        // Format time from ms to M:SS
+        function formatTime(ms) {
+            if (isNaN(ms) || ms < 0) return "0:00";
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+
+        // Global state for volume
+        let currentVolumeBeforeMute = 50; // Default volume to restore to if unmuting from 0
+        let isCurrentlyMuted = false;
+
+        // Track state to avoid unnecessary UI updates
+        let currentTrackId = null;
+        let currentPlayState = null;
+        let currentAlbumId = null; // Added to track current album for art caching
+        let currentProgressMs = 0; // To track progress for polling activity
+
         // Set up player functionality
         function setupPlayer(token) {
             // Set up event listeners for player controls
@@ -460,6 +507,38 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
             nextButton.addEventListener('click', () => {
                 spotifyApiCall('POST', '/me/player/next');
                 setTimeout(getCurrentlyPlaying, 500);
+            });
+            
+            progressBar.addEventListener('input', () => {
+                // Optional: Could provide visual feedback while dragging
+                // For now, we only seek when the user releases (change event)
+            });
+
+            progressBar.addEventListener('change', () => {
+                const newPosition = parseInt(progressBar.value);
+                spotifyApiCall('PUT', `/me/player/seek?position_ms=${newPosition}`);
+                // Update UI optimistically or wait for polling
+                setTimeout(getCurrentlyPlaying, 250); // Quicker update after seek
+            });
+            
+            muteToggleButton.addEventListener('click', async () => {
+                let targetVolume;
+                if (isCurrentlyMuted) {
+                    targetVolume = currentVolumeBeforeMute > 0 ? currentVolumeBeforeMute : 50; // Restore or default
+                    muteToggleButton.textContent = 'Mute'; // Immediately update UI
+                    isCurrentlyMuted = false; // Immediately update state
+                } else {
+                    // Before muting, store current volume
+                    const playerData = await spotifyApiCall('GET', '/me/player');
+                    if (playerData && playerData.device && typeof playerData.device.volume_percent !== 'undefined') {
+                        currentVolumeBeforeMute = playerData.device.volume_percent;
+                    }
+                    targetVolume = 0;
+                    muteToggleButton.textContent = 'Unmute'; // Immediately update UI
+                    isCurrentlyMuted = true; // Immediately update state
+                }
+                await spotifyApiCall('PUT', `/me/player/volume?volume_percent=${targetVolume}`);
+                setTimeout(getCurrentlyPlaying, 250); // Refresh state from API
             });
             
             // Start polling for current track
@@ -551,80 +630,122 @@ urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
             }
         }
         
-        // Track state to avoid unnecessary UI updates
-        let currentTrackId = null;
-        let currentPlayState = null;
-        let currentAlbumId = null; // Added to track current album for art caching
-        
         // Get and display currently playing track
         async function getCurrentlyPlaying() {
             try {
                 const data = await spotifyApiCall('GET', '/me/player/currently-playing');
-                
-                if (data && data.item) {
-                    const newTrackId = data.item.id;
-                    const newAlbumId = data.item.album ? data.item.album.id : null;
-                    const newPlayState = data.is_playing;
+                let activityDetectedForPolling = false;
 
-                    const trackChanged = currentTrackId !== newTrackId;
-                    const playStateChanged = currentPlayState !== newPlayState;
-                    const albumChanged = newAlbumId !== currentAlbumId;
+                if (data) { // If data is not null (API call returned something)
+                    // Always update mute button state if device info is available
+                    if (data.device && typeof data.device.volume_percent !== 'undefined') {
+                        const previousMuteState = isCurrentlyMuted;
+                        const actualVolume = data.device.volume_percent;
 
-                    let activityForPolling = false;
-
-                    if (trackChanged || playStateChanged) {
-                        trackName.textContent = data.item.name;
-                        artistName.textContent = data.item.artists.map(artist => artist.name).join(', ');
-                        currentTrackId = newTrackId;
-                        currentPlayState = newPlayState;
-                        activityForPolling = true;
-                    }
-
-                    // Handle Album Art: Update if album changed or if no art is currently displayed
-                    if (newAlbumId && (albumChanged || !albumArt.hasChildNodes())) {
-                        currentAlbumId = newAlbumId; // Update currentAlbumId
-                        activityForPolling = true; // Album change is also an activity
-
-                        const albumArtCacheKey = `spotify_album_art_${newAlbumId}`;
-                        let cachedArtUrl = localStorage.getItem(albumArtCacheKey);
-
-                        if (cachedArtUrl) {
-                            const img = new Image();
-                            img.onload = () => {
-                                albumArt.innerHTML = `<img src="${cachedArtUrl}" alt="Album Art" style="width:100%; height:100%; border-radius:8px;">`;
-                            };
-                            img.onerror = () => { // If cached URL fails, clear cache and fetch new
-                                console.warn('Cached album art failed to load, fetching fresh.', cachedArtUrl);
-                                localStorage.removeItem(albumArtCacheKey);
-                                if (data.item.album) { // Ensure album data is still relevant
-                                   fetchAndSetAlbumArt(data.item.album, newAlbumId);
-                                } else {
-                                   albumArt.innerHTML = ''; // Clear if no album data
-                                }
-                            };
-                            img.src = cachedArtUrl;
-                        } else if (data.item.album && data.item.album.images && data.item.album.images.length > 0) {
-                            fetchAndSetAlbumArt(data.item.album, newAlbumId);
+                        if (actualVolume === 0) {
+                            isCurrentlyMuted = true;
+                            muteToggleButton.textContent = 'Unmute';
+                            // currentVolumeBeforeMute retains its value from when it was last non-zero
                         } else {
-                            albumArt.innerHTML = ''; // No album art available
+                            isCurrentlyMuted = false;
+                            muteToggleButton.textContent = 'Mute';
+                            currentVolumeBeforeMute = actualVolume; // Store the current non-zero volume
                         }
+                        if (isCurrentlyMuted !== previousMuteState) {
+                            activityDetectedForPolling = true; // Mute state change is an activity
+                        }
+                    } else {
+                        // console.log("Device or volume info missing in getCurrentlyPlaying response.");
+                        // Potentially disable mute button or leave its state as is if no device info
                     }
-                    return activityForPolling;
 
-                } else if (currentTrackId !== null) { // Music stopped
-                    currentTrackId = null;
-                    currentPlayState = null;
-                    currentAlbumId = null; // Reset album ID
-                    trackName.textContent = 'Not Playing';
-                    artistName.textContent = '-';
-                    albumArt.innerHTML = ''; // Clear album art
-                    return true; // Activity detected - state changed to not playing
+                    // Handle track-specific information
+                    if (data.item) {
+                        const newTrackId = data.item.id;
+                        const newAlbumId = data.item.album ? data.item.album.id : null;
+                        const newPlayState = data.is_playing;
+                        const newProgress = typeof data.progress_ms !== 'undefined' ? data.progress_ms : currentProgressMs;
+
+                        const trackChanged = currentTrackId !== newTrackId;
+                        const playStateChanged = currentPlayState !== newPlayState;
+                        const albumChanged = newAlbumId !== currentAlbumId;
+                        const progressChanged = currentProgressMs !== newProgress;
+
+
+                        if (trackChanged || playStateChanged) {
+                            trackName.textContent = data.item.name;
+                            artistName.textContent = data.item.artists.map(artist => artist.name).join(', ');
+                            currentTrackId = newTrackId;
+                            currentPlayState = newPlayState;
+                            activityDetectedForPolling = true;
+                        }
+                        
+                        if (progressChanged || trackChanged) { // Update progress if it changed or track changed
+                             if (data.item.duration_ms) {
+                                progressBar.max = data.item.duration_ms;
+                                totalTimeDisplay.textContent = formatTime(data.item.duration_ms);
+                            }
+                            progressBar.value = newProgress;
+                            currentTimeDisplay.textContent = formatTime(newProgress);
+                            currentProgressMs = newProgress;
+                            if(progressChanged && !trackChanged && !playStateChanged) activityDetectedForPolling = true; // if only progress changed
+                        }
+
+
+                        if (newAlbumId && (albumChanged || !albumArt.hasChildNodes())) {
+                            currentAlbumId = newAlbumId;
+                            const albumArtCacheKey = `spotify_album_art_${newAlbumId}`;
+                            let cachedArtUrl = localStorage.getItem(albumArtCacheKey);
+
+                            if (cachedArtUrl) {
+                                const img = new Image();
+                                img.onload = () => {
+                                    albumArt.innerHTML = `<img src="${cachedArtUrl}" alt="Album Art" style="width:100%; height:100%; border-radius:8px;">`;
+                                };
+                                img.onerror = () => {
+                                    localStorage.removeItem(albumArtCacheKey);
+                                    if (data.item.album) {
+                                       fetchAndSetAlbumArt(data.item.album, newAlbumId);
+                                    } else {
+                                       albumArt.innerHTML = '';
+                                    }
+                                };
+                                img.src = cachedArtUrl;
+                            } else if (data.item.album && data.item.album.images && data.item.album.images.length > 0) {
+                                fetchAndSetAlbumArt(data.item.album, newAlbumId);
+                            } else {
+                                albumArt.innerHTML = '';
+                            }
+                            activityDetectedForPolling = true;
+                        }
+                        // return activityDetectedForPolling || trackChanged || playStateChanged || albumChanged || progressChanged; // Consolidate activity
+                        return activityDetectedForPolling;
+
+
+                    } else if (currentTrackId !== null) { // Music stopped (no item, but was playing before)
+                        currentTrackId = null;
+                        currentPlayState = null;
+                        currentAlbumId = null;
+                        currentProgressMs = 0;
+                        trackName.textContent = 'Not Playing';
+                        artistName.textContent = '-';
+                        albumArt.innerHTML = '';
+                        progressBar.value = 0;
+                        progressBar.max = 0;
+                        currentTimeDisplay.textContent = '0:00';
+                        totalTimeDisplay.textContent = '0:00';
+                        return true; // Activity detected - state changed to not playing
+                    }
+                } else if (data === null && currentTrackId !== null ) { // API call failed, but we thought it was playing
+                     // If API call fails (data is null), and we thought a track was playing, treat as state change.
+                    currentTrackId = null; // Reset to trigger login/refresh if needed by other logic
+                    return true; // Indicate activity to potentially slow down polling or re-check auth
                 }
                 
-                return false; // No activity detected
+                return activityDetectedForPolling; // Return if any activity (mute, track, playstate, album, progress) was detected
             } catch (error) {
                 console.error('Error updating player:', error);
-                return false; // Don't update UI on errors to prevent flickering
+                return false; // No activity on error
             }
         }
         
