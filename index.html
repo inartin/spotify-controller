@@ -426,6 +426,12 @@
         #player-container:fullscreen #fullscreen-button {
             z-index: 1;
         }
+
+        /* Hide cursor when inactive in fullscreen mode */
+        #player-container:fullscreen.cursor-hidden,
+        #player-container:fullscreen.cursor-hidden * {
+            cursor: none !important; /* Important to override any other cursor styles */
+        }
     </style>
 </head>
 
@@ -922,13 +928,16 @@
                     getCurrentTrackArtistForBackground();
                 }
             });
-
+            
+            // Setup mouse cursor hiding in fullscreen mode
+            setupCursorHiding();
+            
             // Start polling for current track
             getCurrentlyPlaying();
-
+            const startValue = 2000;
             // Adaptive polling - increase interval when inactive
-            let pollingInterval = 5000; // Start with 5 seconds
-            const maxPollingInterval = 15000; // Max 15 seconds between polls
+            let pollingInterval = startValue; // Start with 2 seconds
+            const maxPollingInterval = 10000; // Max 10 seconds between polls
             let inactiveTime = 0;
 
             function adaptivePolling() {
@@ -937,7 +946,7 @@
                         // If track changed or playback state changed
                         if (hasActivity) {
                             inactiveTime = 0;
-                            pollingInterval = 5000; // Reset to 5 seconds
+                            pollingInterval = startValue; // Reset to 5 seconds
                         } else {
                             inactiveTime += pollingInterval;
                             // Gradually increase polling interval when inactive
@@ -1293,6 +1302,54 @@
             } else {
                 albumArt.innerHTML = ''; // No art available for this album
             }
+        }
+
+        // Setup mouse cursor hiding in fullscreen mode
+        function setupCursorHiding() {
+            let cursorTimeout;
+            const CURSOR_HIDE_DELAY = 3000; // Hide cursor after 3 seconds of inactivity
+            
+            function showCursor() {
+                // Only manage cursor when in fullscreen
+                if (document.fullscreenElement) {
+                    // Show cursor
+                    playerContainer.classList.remove('cursor-hidden');
+                    
+                    // Clear any existing timeout
+                    if (cursorTimeout) {
+                        clearTimeout(cursorTimeout);
+                    }
+                    
+                    // Set timeout to hide cursor after inactivity
+                    cursorTimeout = setTimeout(() => {
+                        if (document.fullscreenElement) {
+                            playerContainer.classList.add('cursor-hidden');
+                        }
+                    }, CURSOR_HIDE_DELAY);
+                }
+            }
+            
+            // Add event listeners for mouse movement and interaction
+            playerContainer.addEventListener('mousemove', showCursor);
+            playerContainer.addEventListener('mousedown', showCursor);
+            playerContainer.addEventListener('keydown', showCursor);
+            playerContainer.addEventListener('touchstart', showCursor);
+            
+            // Handle fullscreen changes
+            document.addEventListener('fullscreenchange', () => {
+                if (!document.fullscreenElement) {
+                    // Ensure cursor is visible when exiting fullscreen
+                    playerContainer.classList.remove('cursor-hidden');
+                    // Clear any timeout
+                    if (cursorTimeout) {
+                        clearTimeout(cursorTimeout);
+                        cursorTimeout = null;
+                    }
+                } else {
+                    // Initial cursor show when entering fullscreen, then start the timer
+                    showCursor();
+                }
+            });
         }
 
         // Initialize the app when DOM is loaded
