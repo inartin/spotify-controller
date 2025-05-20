@@ -28,8 +28,8 @@
             /* Button colors */
             --color-spotify-green: #1db9542a;
             --color-spotify-green-hover: #1ed75f25;
-            --color-playing-blue: #1a73e81d;
-            --color-button-bg: #1ed75f25;
+            --color-button-play-pause-bg: #1a73e80f;
+            --color-button-bg: #1ed75f05;
             --color-button-utility: rgba(40, 40, 40, 0.7);
 
             /* Spacing */
@@ -128,15 +128,21 @@
         }
 
         #player-container:fullscreen .album-info-container {
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
+            justify-content: center;
             z-index: 1;
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
         #player-container:fullscreen #track-info {
-            margin-left: 0;
-            text-align: center;
-            margin-top: 15px;
+            margin-left: 30px;
+            text-align: left;
+            margin-top: 0;
+            flex-shrink: 0;
+            min-width: 300px;
         }
 
         #player-container:fullscreen #prev-button {
@@ -212,6 +218,16 @@
             text-overflow: ellipsis;
         }
 
+        /* Allow full text display in fullscreen mode */
+        #player-container:fullscreen #track-name,
+        #player-container:fullscreen #artist-name {
+            white-space: normal;
+            overflow: visible;
+            text-overflow: clip;
+            word-wrap: break-word;
+            max-width: 100%;
+        }
+
         #progress-container {
             margin: 55px auto;
             width: 90%;
@@ -251,13 +267,14 @@
 
         /* Styles for controls are defined below */
 
-                /* Controls section at the bottom */
+        /* Controls section at the bottom */
         #controls {
             display: flex;
             justify-content: center;
             align-items: center;
             margin-top: 30px;
-            gap: var(--spacing-lg); /* Increased gap between buttons */
+            gap: var(--spacing-lg);
+            /* Increased gap between buttons */
         }
 
         .control-button {
@@ -271,13 +288,14 @@
         }
 
         #play-pause-button {
-            background-color: #1db9543a;
+            background-color: var(--color-button-play-pause-bg);
             padding: var(--btn-control-padding);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 var(--spacing-xl); /* Adding horizontal margin for more separation */
+            margin: 0 var(--spacing-xl);
+            /* Adding horizontal margin for more separation */
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
             /* Slightly larger size for the play/pause button */
             transform: scale(1.2);
@@ -285,7 +303,8 @@
 
         #play-pause-button:hover,
         #play-pause-button:active {
-            transform: scale(1.3); /* Slightly larger on hover from the initial 1.2 scale */
+            transform: scale(1.3);
+            /* Slightly larger on hover from the initial 1.2 scale */
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
         }
 
@@ -430,7 +449,8 @@
         /* Hide cursor when inactive in fullscreen mode */
         #player-container:fullscreen.cursor-hidden,
         #player-container:fullscreen.cursor-hidden * {
-            cursor: none !important; /* Important to override any other cursor styles */
+            cursor: none !important;
+            /* Important to override any other cursor styles */
         }
     </style>
 </head>
@@ -928,10 +948,10 @@
                     getCurrentTrackArtistForBackground();
                 }
             });
-            
+
             // Setup mouse cursor hiding in fullscreen mode
             setupCursorHiding();
-            
+
             // Start polling for current track
             getCurrentlyPlaying();
             const startValue = 2000;
@@ -1204,7 +1224,7 @@
             try {
                 // Get currently playing track
                 const data = await spotifyApiCall('GET', '/me/player/currently-playing');
-                
+
                 if (data && data.item && data.item.artists && data.item.artists.length > 0) {
                     // Get primary artist ID
                     const artistId = data.item.artists[0].id;
@@ -1225,7 +1245,7 @@
                 updateFullscreenBackground();
             }
         }
-        
+
         // Helper function to update the fullscreen background with current album art
         function updateFullscreenBackground() {
             if (document.fullscreenElement && currentAlbumId) {
@@ -1315,18 +1335,18 @@
         function setupCursorHiding() {
             let cursorTimeout;
             const CURSOR_HIDE_DELAY = 3000; // Hide cursor after 3 seconds of inactivity
-            
+
             function showCursor() {
                 // Only manage cursor when in fullscreen
                 if (document.fullscreenElement) {
                     // Show cursor
                     playerContainer.classList.remove('cursor-hidden');
-                    
+
                     // Clear any existing timeout
                     if (cursorTimeout) {
                         clearTimeout(cursorTimeout);
                     }
-                    
+
                     // Set timeout to hide cursor after inactivity
                     cursorTimeout = setTimeout(() => {
                         if (document.fullscreenElement) {
@@ -1335,13 +1355,13 @@
                     }, CURSOR_HIDE_DELAY);
                 }
             }
-            
+
             // Add event listeners for mouse movement and interaction
             playerContainer.addEventListener('mousemove', showCursor);
             playerContainer.addEventListener('mousedown', showCursor);
             playerContainer.addEventListener('keydown', showCursor);
             playerContainer.addEventListener('touchstart', showCursor);
-            
+
             // Handle fullscreen changes
             document.addEventListener('fullscreenchange', () => {
                 if (!document.fullscreenElement) {
