@@ -90,16 +90,19 @@
 
         /* Fullscreen styling */
         #player-container:fullscreen {
-    background-color: #121212;
-    max-width: 800px;
-    margin: 0 auto;
-    overflow: hidden;
-    position: relative;
-    /* Simple padding-based centering */
-    height: 100vh;
-    padding-top: 25vh; /* Push content down by 25% of viewport height */
-    box-sizing: border-box;
-}
+            background-color: #121212;
+            max-width: 800px;
+            width: 800px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow: hidden;
+            /* Absolute positioning for precise centering */
+        }
 
         #player-container {
             --album-bg: none;
