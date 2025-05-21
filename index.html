@@ -90,17 +90,16 @@
 
         /* Fullscreen styling */
         #player-container:fullscreen {
-            background-color: #121212;
-            max-width: 800px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 20px;
-            position: relative;
-            overflow: hidden;
-            margin: 0 auto;
-            /* Prevent background from causing scrollbars */
-        }
+    background-color: #121212;
+    max-width: 800px;
+    margin: 0 auto;
+    overflow: hidden;
+    position: relative;
+    /* Simple padding-based centering */
+    height: 100vh;
+    padding-top: 25vh; /* Push content down by 25% of viewport height */
+    box-sizing: border-box;
+}
 
         #player-container {
             --album-bg: none;
@@ -123,33 +122,22 @@
             /* Prevent blur edges from showing */
         }
 
+        /* Add z-index to all foreground elements to ensure they're above the blurred background */
+        #player-container:fullscreen #track-info,
+        #player-container:fullscreen #progress-container,
+        #player-container:fullscreen #controls,
+        #player-container:fullscreen #mute-toggle-button,
+        #player-container:fullscreen #fullscreen-button,
+        #player-container:fullscreen .album-info-container,
         #player-container:fullscreen #album-art {
-            /* Match non-fullscreen styling */
-            margin: 0;
             z-index: 1;
         }
 
-        #player-container:fullscreen .album-info-container {
-            /* Keep only the z-index property for fullscreen */
-            z-index: 1;
-            /* Use same styling as non-fullscreen */
-            margin: 20px 0;
-        }
-
-        #player-container:fullscreen #track-info {
-            /* Use same styling as non-fullscreen */
-            margin-left: 30px;
-            text-align: left;
-            flex-grow: 1;
-            max-width: 400px;
-        }
-
-        #player-container:fullscreen #prev-button {
-            left: 5%;
-        }
-
-        #player-container:fullscreen #next-button {
-            right: 5%;
+        /* Hide cursor when inactive in fullscreen mode */
+        #player-container:fullscreen.cursor-hidden,
+        #player-container:fullscreen.cursor-hidden * {
+            cursor: none !important;
+            /* Important to override any other cursor styles */
         }
 
         .hidden {
@@ -217,14 +205,7 @@
             text-overflow: ellipsis;
         }
 
-        /* Keep the same text display style in fullscreen mode as regular mode */
-        #player-container:fullscreen #track-name,
-        #player-container:fullscreen #artist-name {
-            /* Use same styling as non-fullscreen */
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+
 
         #progress-container {
             margin: 55px auto;
@@ -435,21 +416,7 @@
             /* Original Spotify green when paused/play button */
         }
 
-        /* Add z-index to all foreground elements to ensure they're above the blurred background */
-        #player-container:fullscreen #track-info,
-        #player-container:fullscreen #progress-container,
-        #player-container:fullscreen #controls,
-        #player-container:fullscreen #mute-toggle-button,
-        #player-container:fullscreen #fullscreen-button {
-            z-index: 1;
-        }
-
-        /* Hide cursor when inactive in fullscreen mode */
-        #player-container:fullscreen.cursor-hidden,
-        #player-container:fullscreen.cursor-hidden * {
-            cursor: none !important;
-            /* Important to override any other cursor styles */
-        }
+        /* Keep fullscreen content identical to normal view */
     </style>
 </head>
 
