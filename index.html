@@ -128,22 +128,18 @@
         }
 
         #player-container:fullscreen .album-info-container {
-            flex-direction: row;
-            align-items: center;
-            justify-content: flex-start;
+            /* Keep only the z-index property for fullscreen */
             z-index: 1;
-            width: auto;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 0 20px;
+            /* Use same styling as non-fullscreen */
+            margin: 20px 0;
         }
 
         #player-container:fullscreen #track-info {
-            margin-left: 15px;
+            /* Use same styling as non-fullscreen */
+            margin-left: 30px;
             text-align: left;
-            margin-top: 0;
-            flex-shrink: 0;
-            min-width: 300px;
+            flex-grow: 1;
+            max-width: 400px;
         }
 
         #player-container:fullscreen #prev-button {
@@ -219,14 +215,13 @@
             text-overflow: ellipsis;
         }
 
-        /* Allow full text display in fullscreen mode */
+        /* Keep the same text display style in fullscreen mode as regular mode */
         #player-container:fullscreen #track-name,
         #player-container:fullscreen #artist-name {
-            white-space: normal;
-            overflow: visible;
-            text-overflow: clip;
-            word-wrap: break-word;
-            max-width: 100%;
+            /* Use same styling as non-fullscreen */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         #progress-container {
