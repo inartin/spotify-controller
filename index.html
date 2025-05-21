@@ -91,13 +91,14 @@
         /* Fullscreen styling */
         #player-container:fullscreen {
             background-color: #121212;
-            max-width: none;
+            max-width: 800px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             padding: 20px;
             position: relative;
             overflow: hidden;
+            margin: 0 auto;
             /* Prevent background from causing scrollbars */
         }
 
@@ -123,7 +124,8 @@
         }
 
         #player-container:fullscreen #album-art {
-            margin: 15px auto;
+            /* Match non-fullscreen styling */
+            margin: 0;
             z-index: 1;
         }
 
