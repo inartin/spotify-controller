@@ -78,39 +78,16 @@
             max-width: 90%;
         }
 
-        #player-container {
-            display: none;
-            width: 100%;
-            max-width: 800px;
-            text-align: center;
-            padding: 20px;
-            position: relative;
-            /* For absolute positioning of children */
-        }
-
-        /* Fullscreen styling */
-        #player-container:fullscreen {
-            background-color: #121212;
-            max-width: 800px;
-            width: 800px;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-            overflow: hidden;
-            /* Absolute positioning for precise centering */
-        }
-
-        #player-container {
+        body {
             --album-bg: none;
+            --album-bg-next: none;
+            --bg-opacity: 1;
+            transition: --bg-opacity 0.5s ease-in-out;
         }
 
-        #player-container:fullscreen::before {
+        body::before {
             content: "";
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             right: 0;
@@ -119,28 +96,48 @@
             background-size: cover;
             background-position: center;
             filter: blur(20px) brightness(0.4);
-            opacity: 0.7;
+            opacity: var(--bg-opacity);
             z-index: -1;
             transform: scale(1.1);
             /* Prevent blur edges from showing */
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: var(--album-bg-next);
+            background-size: cover;
+            background-position: center;
+            filter: blur(20px) brightness(0.4);
+            opacity: calc(1 - var(--bg-opacity));
+            z-index: -1;
+            transform: scale(1.1);
+            /* Prevent blur edges from showing */
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #player-container {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+            padding: 20px;
+            position: relative;
         }
 
         /* Add z-index to all foreground elements to ensure they're above the blurred background */
-        #player-container:fullscreen #track-info,
-        #player-container:fullscreen #progress-container,
-        #player-container:fullscreen #controls,
-        #player-container:fullscreen #mute-toggle-button,
-        #player-container:fullscreen #fullscreen-button,
-        #player-container:fullscreen .album-info-container,
-        #player-container:fullscreen #album-art {
+        #player-container #track-info,
+        #player-container #progress-container,
+        #player-container #controls,
+        #player-container #mute-toggle-button,
+        #player-container .album-info-container,
+        #player-container #album-art {
             z-index: 1;
-        }
-
-        /* Hide cursor when inactive in fullscreen mode */
-        #player-container:fullscreen.cursor-hidden,
-        #player-container:fullscreen.cursor-hidden * {
-            cursor: none !important;
-            /* Important to override any other cursor styles */
         }
 
         .hidden {
@@ -207,8 +204,6 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
-
 
         #progress-container {
             margin: 55px auto;
@@ -290,8 +285,7 @@
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
         }
 
-        #mute-toggle-button,
-        #fullscreen-button {
+        #mute-toggle-button {
             position: fixed;
             background-color: rgba(40, 40, 40, 0.7);
             padding: var(--btn-control-padding);
@@ -301,21 +295,11 @@
             justify-content: center;
             margin: 0;
             z-index: 1000;
-            /* Remove width/height, let content and padding determine size */
-        }
-
-        #mute-toggle-button {
             bottom: var(--spacing-md);
             right: var(--spacing-md);
         }
 
-        #fullscreen-button {
-            top: var(--spacing-md);
-            right: var(--spacing-md);
-        }
-
-        #mute-toggle-button:hover,
-        #fullscreen-button:hover {
+        #mute-toggle-button:hover {
             background-color: rgba(60, 60, 60, 0.9);
         }
 
@@ -404,10 +388,6 @@
             font-size: var(--utility-icon-size);
         }
 
-        #fullscreen-button .icon {
-            font-size: var(--utility-icon-size);
-        }
-
         /* Play button states */
         #play-pause-button.playing {
             background-color: #1a73e81d;
@@ -418,8 +398,6 @@
             background-color: #1db9542a;
             /* Original Spotify green when paused/play button */
         }
-
-        /* Keep fullscreen content identical to normal view */
     </style>
 </head>
 
@@ -473,7 +451,6 @@
             <button id="next-button" class="control-button"><span class="icon">skip_next</span></button>
         </div>
         <button id="mute-toggle-button"><span class="icon">volume_up</span></button>
-        <button id="fullscreen-button"><span class="icon">fullscreen</span></button>
     </div>
 
     <script>
@@ -532,7 +509,6 @@
         const currentTimeDisplay = document.getElementById('current-time');
         const totalTimeDisplay = document.getElementById('total-time');
         const muteToggleButton = document.getElementById('mute-toggle-button');
-        const fullscreenButton = document.getElementById('fullscreen-button');
 
         // Get the base URL for redirect URI
         const baseUrl = window.location.origin + window.location.pathname;
@@ -765,36 +741,41 @@
                 throw new Error('Missing client ID or refresh token');
             }
 
-            const params = new URLSearchParams();
-            params.append('client_id', clientId);
-            params.append('grant_type', 'refresh_token');
-            params.append('refresh_token', refreshToken);
+            try {
+                const params = new URLSearchParams();
+                params.append('client_id', clientId);
+                params.append('grant_type', 'refresh_token');
+                params.append('refresh_token', refreshToken);
 
-            const response = await fetch(SPOTIFY_TOKEN_ENDPOINT, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: params
-            });
+                const response = await fetch(SPOTIFY_TOKEN_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: params
+                });
 
-            if (!response.ok) {
-                throw new Error(`Refresh token request failed: ${response.status}`);
+                if (!response.ok) {
+                    throw new Error(`Refresh token request failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Update stored tokens
+                localStorage.setItem('spotify_access_token', data.access_token);
+                localStorage.setItem('spotify_token_timestamp', Date.now());
+                localStorage.setItem('spotify_token_expires_in', data.expires_in);
+
+                // If a new refresh token is provided, update it
+                if (data.refresh_token) {
+                    localStorage.setItem('spotify_refresh_token', data.refresh_token);
+                }
+
+                return data;
+            } catch (error) {
+                console.error('Error refreshing token:', error);
+                throw error; // Re-throw to handle in the calling function
             }
-
-            const data = await response.json();
-
-            // Update stored tokens
-            localStorage.setItem('spotify_access_token', data.access_token);
-            localStorage.setItem('spotify_token_timestamp', Date.now());
-            localStorage.setItem('spotify_token_expires_in', data.expires_in);
-
-            // If a new refresh token is provided, update it
-            if (data.refresh_token) {
-                localStorage.setItem('spotify_refresh_token', data.refresh_token);
-            }
-
-            return data;
         }
 
         // Format time from ms to M:SS
@@ -815,6 +796,8 @@
         let currentPlayState = null;
         let currentAlbumId = null; // Added to track current album for art caching
         let currentProgressMs = 0; // To track progress for polling activity
+        let isUpdatingBackground = false; // Flag to prevent multiple background updates
+        let currentBackgroundUrl = null; // Track current background URL
 
         // Set up player functionality
         function setupPlayer(token) {
@@ -878,48 +861,6 @@
                 setTimeout(getCurrentlyPlaying, 250); // Refresh state from API
             });
 
-            // Fullscreen toggle functionality
-            fullscreenButton.addEventListener('click', () => {
-                if (!document.fullscreenElement) {
-                    // Enter fullscreen
-                    if (playerContainer.requestFullscreen) {
-                        playerContainer.requestFullscreen();
-                    } else if (playerContainer.webkitRequestFullscreen) { /* Safari */
-                        playerContainer.webkitRequestFullscreen();
-                    } else if (playerContainer.msRequestFullscreen) { /* IE11 */
-                        playerContainer.msRequestFullscreen();
-                    }
-                    fullscreenButton.querySelector('.icon').textContent = 'fullscreen_exit';
-
-                    // Try to get current artist data for background or fallback to album art
-                    getCurrentTrackArtistForBackground();
-                } else {
-                    // Exit fullscreen
-                    if (document.exitFullscreen) {
-                        document.exitFullscreen();
-                    } else if (document.webkitExitFullscreen) { /* Safari */
-                        document.webkitExitFullscreen();
-                    } else if (document.msExitFullscreen) { /* IE11 */
-                        document.msExitFullscreen();
-                    }
-                    fullscreenButton.querySelector('.icon').textContent = 'fullscreen';
-                }
-            });
-
-            // Listen for fullscreen change events (like when user presses Escape)
-            document.addEventListener('fullscreenchange', () => {
-                if (!document.fullscreenElement) {
-                    fullscreenButton.querySelector('.icon').textContent = 'fullscreen';
-                } else {
-                    fullscreenButton.querySelector('.icon').textContent = 'fullscreen_exit';
-                    // Update background when entering fullscreen mode
-                    getCurrentTrackArtistForBackground();
-                }
-            });
-
-            // Setup mouse cursor hiding in fullscreen mode
-            setupCursorHiding();
-
             // Start polling for current track
             getCurrentlyPlaying();
             const startValue = 2000;
@@ -979,66 +920,89 @@
         // Make API calls to Spotify
         async function spotifyApiCall(method, endpoint, body = null) {
             const token = localStorage.getItem('spotify_access_token');
+            let retryCount = 0;
+            const maxRetries = 2;
 
-            try {
-                const response = await fetch(`${SPOTIFY_API_ENDPOINT}${endpoint}`, {
-                    method: method,
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: body ? JSON.stringify(body) : null
-                });
+            while (retryCount <= maxRetries) {
+                try {
+                    const response = await fetch(`${SPOTIFY_API_ENDPOINT}${endpoint}`, {
+                        method: method,
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: body ? JSON.stringify(body) : null
+                    });
 
-                if (response.status === 401) {
-                    // Try to refresh the token instead of immediately showing expired message
-                    try {
-                        await refreshAccessToken();
-                        // If refresh successful, retry the original API call
-                        return spotifyApiCall(method, endpoint, body);
-                    } catch (refreshError) {
-                        // Only if refresh fails, show the expired message
-                        localStorage.removeItem('spotify_access_token');
-                        alert('Your session has expired. Please log in again.');
-                        window.location.reload();
-                        return null;
-                    }
-                }
-
-                if (response.status === 204) {
-                    return true; // Success but no content
-                }
-
-                if (response.ok) {
-                    // Only try to parse as JSON if there's content
-                    if (response.status !== 204) {
-                        const text = await response.text();
-                        // Check if there's any content to parse
-                        if (!text) return null;
-
+                    if (response.status === 401) {
+                        // Token expired, try to refresh
                         try {
-                            // Check if the response starts with a valid JSON character
-                            if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
-                                return JSON.parse(text);
-                            } else {
-                                console.log('Non-JSON response:', text);
-                                return null;
-                            }
-                        } catch (parseError) {
-                            console.error('JSON Parse Error:', parseError);
-                            console.log('Response text:', text);
+                            await refreshAccessToken();
+                            // If refresh successful, retry the original API call
+                            retryCount++;
+                            continue;
+                        } catch (refreshError) {
+                            console.error('Token refresh failed:', refreshError);
+                            // If refresh fails, clear tokens and reload
+                            localStorage.removeItem('spotify_access_token');
+                            localStorage.removeItem('spotify_refresh_token');
+                            alert('Your session has expired. Please log in again.');
+                            window.location.reload();
                             return null;
                         }
                     }
-                    return true;
-                } else {
-                    console.error('API Error:', response.status);
+
+                    if (response.status === 204) {
+                        return true; // Success but no content
+                    }
+
+                    if (response.ok) {
+                        // Only try to parse as JSON if there's content
+                        if (response.status !== 204) {
+                            const text = await response.text();
+                            // Check if there's any content to parse
+                            if (!text) return null;
+
+                            try {
+                                // Check if the response starts with a valid JSON character
+                                if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                                    return JSON.parse(text);
+                                } else {
+                                    console.log('Non-JSON response:', text);
+                                    return null;
+                                }
+                            } catch (parseError) {
+                                console.error('JSON Parse Error:', parseError);
+                                console.log('Response text:', text);
+                                return null;
+                            }
+                        }
+                        return true;
+                    } else if (response.status === 429) {
+                        // Rate limit exceeded, wait and retry
+                        const retryAfter = response.headers.get('Retry-After') || 5;
+                        console.log(`Rate limited, waiting ${retryAfter} seconds...`);
+                        await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                        retryCount++;
+                        continue;
+                    } else {
+                        console.error('API Error:', response.status);
+                        return null;
+                    }
+                } catch (error) {
+                    console.error('API Request Failed:', error);
+                    if (retryCount < maxRetries) {
+                        // Wait before retrying (exponential backoff)
+                        const waitTime = Math.pow(2, retryCount) * 1000;
+                        console.log(`Retrying in ${waitTime / 1000} seconds...`);
+                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                        retryCount++;
+                        continue;
+                    }
                     return null;
                 }
-            } catch (error) {
-                console.error('API Request Failed:', error);
-                return null;
             }
+            return null;
         }
 
         // Get and display currently playing track
@@ -1065,9 +1029,6 @@
                         if (isCurrentlyMuted !== previousMuteState) {
                             activityDetectedForPolling = true; // Mute state change is an activity
                         }
-                    } else {
-                        // console.log("Device or volume info missing in getCurrentlyPlaying response.");
-                        // Potentially disable mute button or leave its state as is if no device info
                     }
 
                     // Handle track-specific information
@@ -1108,9 +1069,14 @@
                             if (trackChanged) {
                                 startPlaybackTimer();
 
-                                // Fetch artist image when track changes if we're in fullscreen
-                                if (document.fullscreenElement && data.item.artists && data.item.artists.length > 0) {
-                                    fetchArtistImage(data.item.artists[0].id);
+                                // Fetch artist image when track changes - pass the artist data directly
+                                if (data.item.artists && data.item.artists.length > 0) {
+                                    const artistId = data.item.artists[0].id;
+                                    // Let the function handle the logic, no need to check artistId here
+                                    fetchArtistImage(artistId);
+                                } else {
+                                    // Fallback to album art
+                                    updateBackground();
                                 }
                             }
                         }
@@ -1172,6 +1138,9 @@
                             playbackTimerId = null;
                         }
 
+                        // Clear background when no track is playing
+                        document.body.style.setProperty('--album-bg', 'none');
+
                         return true; // Activity detected - state changed to not playing
                     }
                 } else if (data === null && currentTrackId !== null) { // API call failed, but we thought it was playing
@@ -1187,104 +1156,119 @@
             }
         }
 
-        // Get current track artist for background
-        async function getCurrentTrackArtistForBackground() {
-            try {
-                // Get currently playing track
-                const data = await spotifyApiCall('GET', '/me/player/currently-playing');
-
-                if (data && data.item && data.item.artists && data.item.artists.length > 0) {
-                    // Get primary artist ID
-                    const artistId = data.item.artists[0].id;
-                    if (artistId) {
-                        // Fetch and use artist image
-                        fetchArtistImage(artistId);
-                    } else {
-                        // Fallback to album art
-                        updateFullscreenBackground();
-                    }
-                } else {
-                    // No current track or artist, fallback to album art
-                    updateFullscreenBackground();
-                }
-            } catch (error) {
-                console.error("Error getting current track artist:", error);
-                // Fallback to album art
-                updateFullscreenBackground();
-            }
-        }
-
-        // Helper function to update the fullscreen background with current album art
-        function updateFullscreenBackground() {
-            if (document.fullscreenElement && currentAlbumId) {
-                const albumArtCacheKey = `spotify_album_art_${currentAlbumId}`;
-                const cachedArtUrl = localStorage.getItem(albumArtCacheKey);
-
-                if (cachedArtUrl) {
-                    // Use CSS custom property for background
-                    playerContainer.style.setProperty('--album-bg', `url(${cachedArtUrl})`);
-                }
-            }
-        }
-
         // Fetch artist image and use it for background
         async function fetchArtistImage(artistId) {
-            if (!artistId) return;
+            if (isUpdatingBackground) return;
+            isUpdatingBackground = true;
 
-            // Check if we have a cached artist image
-            const artistImageCacheKey = `spotify_artist_image_${artistId}`;
-            const cachedArtistImageUrl = localStorage.getItem(artistImageCacheKey);
-
-            if (cachedArtistImageUrl) {
-                // Use cached image
-                playerContainer.style.setProperty('--album-bg', `url(${cachedArtistImageUrl})`);
-                return;
-            }
-
-            // Make API call to get artist info with images
             try {
+                if (!artistId) {
+                    await updateBackground(); // Fallback if no artist ID
+                    return;
+                }
+
+                // Check cache first
+                const artistImageCacheKey = `spotify_artist_image_${artistId}`;
+                const cachedArtistImageUrl = localStorage.getItem(artistImageCacheKey);
+
+                if (cachedArtistImageUrl) {
+                    if (currentBackgroundUrl !== cachedArtistImageUrl) {
+                        await setBackgroundImage(cachedArtistImageUrl);
+                        currentBackgroundUrl = cachedArtistImageUrl;
+                    }
+                    return;
+                }
+
+                // If not in cache, fetch from API
                 const artistData = await spotifyApiCall('GET', `/artists/${artistId}`);
-
                 if (artistData && artistData.images && artistData.images.length > 0) {
-                    // Get the highest resolution image (first in the array)
                     const artistImageUrl = artistData.images[0].url;
-
-                    // Cache the artist image URL
-                    try {
-                        localStorage.setItem(artistImageCacheKey, artistImageUrl);
-                    } catch (e) {
-                        console.warn("Could not cache artist image, localStorage might be full.", e);
+                    if (currentBackgroundUrl !== artistImageUrl) {
+                        // setBackgroundImage will handle preloading, so we don't need to do it here
+                        try {
+                            localStorage.setItem(artistImageCacheKey, artistImageUrl);
+                        } catch (e) {
+                            console.warn("Could not cache artist image, localStorage might be full.", e);
+                        }
+                        await setBackgroundImage(artistImageUrl);
+                        currentBackgroundUrl = artistImageUrl;
                     }
-
-                    // Set as background if in fullscreen
-                    if (document.fullscreenElement) {
-                        playerContainer.style.setProperty('--album-bg', `url(${artistImageUrl})`);
-                    }
+                } else {
+                    // Fallback to album art if no artist image found
+                    await updateBackground();
                 }
             } catch (error) {
                 console.error("Error fetching artist image:", error);
-                // Fallback to album art if artist image fetch fails
-                updateFullscreenBackground();
+                await updateBackground(); // Fallback on error
+            } finally {
+                isUpdatingBackground = false;
+            }
+        }
+
+        // Helper function to preload an image
+        function preloadImage(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve();
+                img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+                img.src = url;
+            });
+        }
+
+        // Helper function to set background image with transition
+        async function setBackgroundImage(imageUrl) {
+            // First, ensure the new image is fully loaded to prevent flicker
+            await preloadImage(imageUrl);
+            
+            // Set the next background only after image is loaded
+            document.body.style.setProperty('--album-bg-next', `url("${imageUrl}")`);
+
+            // Small delay to ensure CSS has processed the new background
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            // Start transition by fading out current background and fading in next
+            document.body.style.setProperty('--bg-opacity', '0');
+
+            // Wait for transition to complete before swapping backgrounds
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // After transition completes, swap the backgrounds
+            document.body.style.setProperty('--album-bg', `url("${imageUrl}")`);
+            document.body.style.setProperty('--album-bg-next', 'none');
+            document.body.style.setProperty('--bg-opacity', '1');
+        }
+
+        // Helper function to update the background with current album art
+        async function updateBackground() {
+            // This function is now a fallback, it doesn't need its own isUpdatingBackground check,
+            // as it's only called from fetchArtistImage which controls the flag.
+            if (!currentAlbumId) return;
+
+            try {
+                const albumArtCacheKey = `spotify_album_art_${currentAlbumId}`;
+                const cachedArtUrl = localStorage.getItem(albumArtCacheKey);
+
+                if (cachedArtUrl && currentBackgroundUrl !== cachedArtUrl) {
+                    // setBackgroundImage will handle preloading
+                    await setBackgroundImage(cachedArtUrl);
+                    currentBackgroundUrl = cachedArtUrl;
+                }
+            } catch (error) {
+                console.error("Error updating background:", error);
             }
         }
 
         // Helper function to fetch, display, and cache album art
-        function fetchAndSetAlbumArt(albumData, albumId) {
+        async function fetchAndSetAlbumArt(albumData, albumId) {
             if (albumData && albumData.images && albumData.images.length > 0) {
                 const imageUrl = albumData.images[0].url;
                 const albumArtCacheKey = `spotify_album_art_${albumId}`;
 
                 const img = new Image();
-                img.onload = () => {
+                img.onload = async () => {
                     albumArt.innerHTML = `<img src="${imageUrl}" alt="Album Art" style="width:100%; height:100%; border-radius:8px;">`;
                     try {
                         localStorage.setItem(albumArtCacheKey, imageUrl);
-
-                        // Update fullscreen background if in fullscreen mode
-                        if (document.fullscreenElement) {
-                            playerContainer.style.setProperty('--album-bg', `url(${imageUrl})`);
-                            // Use a custom property instead of direct style to avoid querySelector in fullscreen
-                        }
                     } catch (e) {
                         console.warn("Could not cache album art, localStorage might be full.", e);
                     }
@@ -1297,54 +1281,6 @@
             } else {
                 albumArt.innerHTML = ''; // No art available for this album
             }
-        }
-
-        // Setup mouse cursor hiding in fullscreen mode
-        function setupCursorHiding() {
-            let cursorTimeout;
-            const CURSOR_HIDE_DELAY = 3000; // Hide cursor after 3 seconds of inactivity
-
-            function showCursor() {
-                // Only manage cursor when in fullscreen
-                if (document.fullscreenElement) {
-                    // Show cursor
-                    playerContainer.classList.remove('cursor-hidden');
-
-                    // Clear any existing timeout
-                    if (cursorTimeout) {
-                        clearTimeout(cursorTimeout);
-                    }
-
-                    // Set timeout to hide cursor after inactivity
-                    cursorTimeout = setTimeout(() => {
-                        if (document.fullscreenElement) {
-                            playerContainer.classList.add('cursor-hidden');
-                        }
-                    }, CURSOR_HIDE_DELAY);
-                }
-            }
-
-            // Add event listeners for mouse movement and interaction
-            playerContainer.addEventListener('mousemove', showCursor);
-            playerContainer.addEventListener('mousedown', showCursor);
-            playerContainer.addEventListener('keydown', showCursor);
-            playerContainer.addEventListener('touchstart', showCursor);
-
-            // Handle fullscreen changes
-            document.addEventListener('fullscreenchange', () => {
-                if (!document.fullscreenElement) {
-                    // Ensure cursor is visible when exiting fullscreen
-                    playerContainer.classList.remove('cursor-hidden');
-                    // Clear any timeout
-                    if (cursorTimeout) {
-                        clearTimeout(cursorTimeout);
-                        cursorTimeout = null;
-                    }
-                } else {
-                    // Initial cursor show when entering fullscreen, then start the timer
-                    showCursor();
-                }
-            });
         }
 
         // Initialize the app when DOM is loaded
