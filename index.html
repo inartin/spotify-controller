@@ -3,35 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spotify Controller</title>
+    <title>Dashboard - Clock & Now Playing</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- SVG Analog Clock Implementation -->
     <style>
         :root {
-            /* Base icon sizes */
-            --icon-size-xs: 16px;
-            --icon-size-sm: 20px;
-            --icon-size-md: 24px;
-            --icon-size-lg: 36px;
-            --icon-size-xl: 48px;
-            --icon-size-xxl: 80px;
-
-            /* Icon size assignments */
-            --play-pause-icon-size: var(--icon-size-xxl);
-            --prev-next-icon-size: var(--icon-size-xl);
-            --utility-icon-size: var(--icon-size-md);
-
-            /* Button padding (determines size based on content) */
-            --btn-control-padding: 16px;
-            --btn-border-radius: 30px;
-            --btn-play-border-radius: 50%;
-
-            /* Button colors */
-            --color-spotify-green: #1db9542a;
-            --color-spotify-green-hover: #1ed75f25;
-            --color-button-play-pause-bg: #1a73e80f;
-            --color-button-bg: #1ed75f05;
-            --color-button-utility: rgba(40, 40, 40, 0.7);
-
             /* Spacing */
             --spacing-xs: 8px;
             --spacing-sm: 10px;
@@ -40,44 +16,36 @@
             --spacing-xl: 50px;
         }
 
-        @media (max-width: 768px) {
-            :root {
-                /* Smaller sizes for mobile */
-                --btn-play-pause-size: 70px;
-                --btn-control-size: 46px;
-                --btn-utility-size: 40px;
-                --spacing-lg: 24px;
-                --spacing-md: 16px;
-                --spacing-xl: 35px;
-            }
-        }
-
         html,
         body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow-x: hidden;
+            overflow: hidden; /* Prevent scrolling for full dashboard */
         }
 
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'SF Pro Display', -webkit-system-font, 'Helvetica Neue', Helvetica, Arial, sans-serif;
             background-color: #000000;
             color: white;
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
         }
 
         #login-container {
             text-align: center;
             padding: 20px;
             max-width: 90%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
         }
 
+        /* Keep the existing background system */
         body {
             --album-bg: none;
             --album-bg-next: none;
@@ -99,7 +67,6 @@
             opacity: var(--bg-opacity);
             z-index: -1;
             transform: scale(1.1);
-            /* Prevent blur edges from showing */
             transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -117,26 +84,19 @@
             opacity: calc(1 - var(--bg-opacity));
             z-index: -1;
             transform: scale(1.1);
-            /* Prevent blur edges from showing */
             transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        #player-container {
+        #dashboard {
             display: none;
             width: 100%;
-            max-width: 800px;
-            text-align: center;
-            padding: 20px;
-            position: relative;
-        }
-
-        /* Add z-index to all foreground elements to ensure they're above the blurred background */
-        #player-container #track-info,
-        #player-container #progress-container,
-        #player-container #controls,
-        #player-container #mute-toggle-button,
-        #player-container .album-info-container,
-        #player-container #album-art {
+            height: 100vh;
+            padding: var(--spacing-xl);
+            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-xl);
+            align-items: center;
             z-index: 1;
         }
 
@@ -144,185 +104,206 @@
             display: none !important;
         }
 
+        /* Login Button Styling */
         button {
-            background-color: var(--color-button-bg);
+            background-color: rgba(29, 185, 84, 0.2);
             color: white;
             border: none;
-            padding: var(--btn-control-padding);
-            /* Bigger buttons */
-            border-radius: var(--btn-border-radius);
+            padding: 16px 32px;
+            border-radius: 30px;
             font-weight: bold;
             cursor: pointer;
-            margin: var(--spacing-sm);
-            font-size: 20px;
-            /* Larger font for buttons */
+            margin: 10px;
+            font-size: 18px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             transition: all 0.2s ease;
         }
 
         button:hover,
         button:active {
-            background-color: #1ed75f25;
+            background-color: rgba(30, 215, 95, 0.3);
             transform: scale(1.05);
         }
 
-        .album-info-container {
+        /* Clock Section */
+        #clock-section {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            margin: 20px 0;
+            height: 100%;
+        }
+
+        #clock-container {
+            position: relative;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        #analog-clock {
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        #digital-time {
+            font-size: 24px;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+            letter-spacing: 2px;
+            margin-top: var(--spacing-md);
+        }
+
+        #date-display {
+            font-size: 18px;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            margin-top: var(--spacing-sm);
+        }
+
+        /* Spotify Section */
+        #spotify-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: var(--spacing-xl);
+        }
+
+        .now-playing-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: var(--spacing-xl);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
         }
 
         #album-art {
-            width: 300px;
-            height: 300px;
+            width: 250px;
+            height: 250px;
             box-shadow: 0 8px 60px rgba(0, 0, 0, 0.5);
             border-radius: 12px;
             overflow: hidden;
-            flex-shrink: 0;
-        }
-
-        #track-info {
-            margin-left: 30px;
-            text-align: left;
-            flex-grow: 1;
-            max-width: 400px;
+            margin-bottom: var(--spacing-lg);
         }
 
         #track-name {
-            font-size: 28px;
-            margin-bottom: 8px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            line-height: 1.2;
         }
 
         #artist-name {
-            font-size: 20px;
-            color: #b3b3b3;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 22px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 400;
+            margin-bottom: var(--spacing-lg);
         }
 
+        #album-name {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 300;
+            font-style: italic;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        /* Progress Section */
         #progress-container {
-            margin: 55px auto;
-            width: 90%;
-            max-width: 800px;
+            width: 100%;
+            margin-top: var(--spacing-md);
         }
 
         #progress-bar {
             width: 100%;
             cursor: pointer;
-            height: 10px;
+            height: 8px;
             -webkit-appearance: none;
             appearance: none;
-            background: #535353;
-            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
             outline: none;
+            margin-bottom: var(--spacing-sm);
         }
 
         #progress-bar::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             background: #1DB954;
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s ease;
+        }
+
+        #progress-bar::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        #progress-bar::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #1DB954;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
         }
 
         #time-display {
             display: flex;
             justify-content: space-between;
-            font-size: 16px;
-            color: #9AA0A6;
-            /* Modern gray for time display */
-            margin-top: 8px;
-        }
-
-        /* Styles for controls are defined below */
-
-        /* Controls section at the bottom */
-        #controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 30px;
-            gap: var(--spacing-lg);
-            /* Increased gap between buttons */
-        }
-
-        .control-button {
-            padding: var(--btn-control-padding);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            /* Remove margins as we're using gap in the parent container */
-            /* Remove width/height, let padding determine size */
-        }
-
-        #play-pause-button {
-            background-color: var(--color-button-play-pause-bg);
-            padding: var(--btn-control-padding);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 var(--spacing-xl);
-            /* Adding horizontal margin for more separation */
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-            /* Slightly larger size for the play/pause button */
-            transform: scale(1.2);
-        }
-
-        #play-pause-button:hover,
-        #play-pause-button:active {
-            transform: scale(1.3);
-            /* Slightly larger on hover from the initial 1.2 scale */
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-        }
-
-        #mute-toggle-button {
-            position: fixed;
-            background-color: rgba(40, 40, 40, 0.7);
-            padding: var(--btn-control-padding);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0;
-            z-index: 1000;
-            bottom: var(--spacing-md);
-            right: var(--spacing-md);
-        }
-
-        #mute-toggle-button:hover {
-            background-color: rgba(60, 60, 60, 0.9);
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 300;
+            letter-spacing: 0.5px;
         }
 
         .setup-instructions {
-            background-color: #282828;
+            background-color: rgba(40, 40, 40, 0.9);
+            backdrop-filter: blur(10px);
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 12px;
             margin-bottom: 20px;
             max-width: 600px;
             text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .setup-instructions code {
-            background-color: #121212;
+            background-color: rgba(18, 18, 18, 0.8);
             padding: 2px 5px;
             border-radius: 3px;
         }
 
-        @media (max-width: 768px) {
-            :root {
-                --unit: 7px;
-                /* Slightly smaller base unit for mobile */
-                /* All derived values will adjust automatically */
+        /* Mobile Responsiveness */
+        @media (max-width: 1024px) {
+            #dashboard {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+                padding: var(--spacing-md);
+                gap: var(--spacing-md);
+            }
+
+            #analog-clock {
+                width: 300px;
+                height: 300px;
             }
 
             #album-art {
@@ -330,18 +311,28 @@
                 height: 200px;
             }
 
-            .album-info-container {
-                flex-direction: column;
+            #track-name {
+                font-size: 28px;
             }
 
-            #track-info {
-                margin-left: 0;
-                margin-top: var(--spacing-lg);
-                text-align: center;
+            #artist-name {
+                font-size: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #dashboard {
+                padding: var(--spacing-sm);
             }
 
-            button {
-                font-size: var(--icon-size-sm);
+            #analog-clock {
+                width: 250px;
+                height: 250px;
+            }
+
+            #album-art {
+                width: 150px;
+                height: 150px;
             }
 
             #track-name {
@@ -351,59 +342,21 @@
             #artist-name {
                 font-size: 18px;
             }
-        }
 
-        /* Icon styling */
-        .icon {
-            font-family: 'Material Icons';
-            font-weight: normal;
-            font-style: normal;
-            font-size: var(--icon-size-md);
-            /* Default size */
-            line-height: 1;
-            letter-spacing: normal;
-            text-transform: none;
-            display: inline-block;
-            white-space: nowrap;
-            word-wrap: normal;
-            direction: ltr;
-            -webkit-font-smoothing: antialiased;
-        }
+            #digital-time {
+                font-size: 20px;
+            }
 
-        /* Control buttons icon sizes */
-        #prev-button .icon {
-            font-size: var(--prev-next-icon-size);
-        }
-
-        #play-pause-button .icon {
-            font-size: var(--play-pause-icon-size);
-        }
-
-        #next-button .icon {
-            font-size: var(--prev-next-icon-size);
-        }
-
-        /* Utility buttons icon sizes */
-        #mute-toggle-button .icon {
-            font-size: var(--utility-icon-size);
-        }
-
-        /* Play button states */
-        #play-pause-button.playing {
-            background-color: #1a73e81d;
-            /* Modern blue when playing/pause button */
-        }
-
-        #play-pause-button.paused {
-            background-color: #1db9542a;
-            /* Original Spotify green when paused/play button */
+            #date-display {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
 
 <body>
     <div id="login-container">
-        <h1>Spotify Controller</h1>
+        <h1>Dashboard - Clock & Now Playing</h1>
         <div class="setup-instructions">
             <h2>First-time Setup:</h2>
             <ol>
@@ -430,27 +383,65 @@
         <button id="login-button" class="hidden">Connect to Spotify</button>
     </div>
 
-    <div id="player-container">
-        <div class="album-info-container">
-            <div id="album-art"></div>
-            <div id="track-info">
+    <div id="dashboard">
+        <!-- Clock Section -->
+        <div id="clock-section">
+            <div id="clock-container">
+                <svg id="analog-clock" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Clock face -->
+                    <circle cx="100" cy="100" r="95" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+                    
+                    <!-- Hour markers -->
+                    <g id="hour-markers">
+                        <!-- 12, 3, 6, 9 markers (larger) -->
+                        <line x1="100" y1="10" x2="100" y2="25" stroke="rgba(255,255,255,0.8)" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="190" y1="100" x2="175" y2="100" stroke="rgba(255,255,255,0.8)" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="100" y1="190" x2="100" y2="175" stroke="rgba(255,255,255,0.8)" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="10" y1="100" x2="25" y2="100" stroke="rgba(255,255,255,0.8)" stroke-width="3" stroke-linecap="round"/>
+                        
+                        <!-- Other hour markers -->
+                        <line x1="150" y1="23.4" x2="144.6" y2="33.4" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="176.6" y1="50" x2="166.6" y2="55.4" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="176.6" y1="150" x2="166.6" y2="144.6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="150" y1="176.6" x2="144.6" y2="166.6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="50" y1="176.6" x2="55.4" y2="166.6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="23.4" y1="150" x2="33.4" y2="144.6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="23.4" y1="50" x2="33.4" y2="55.4" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="50" y1="23.4" x2="55.4" y2="33.4" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+                    </g>
+                    
+                    <!-- Clock hands -->
+                    <line id="hour-hand" x1="100" y1="100" x2="100" y2="60" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+                    <line id="minute-hand" x1="100" y1="100" x2="100" y2="35" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+                    <line id="second-hand" x1="100" y1="100" x2="100" y2="25" stroke="#1DB954" stroke-width="2" stroke-linecap="round"/>
+                    
+                    <!-- Center dot -->
+                    <circle cx="100" cy="100" r="6" fill="#ffffff"/>
+                    <circle cx="100" cy="100" r="3" fill="#1DB954"/>
+                </svg>
+            </div>
+            <div id="digital-time">12:00:00</div>
+            <div id="date-display">Monday, January 1, 2024</div>
+        </div>
+
+        <!-- Spotify Section -->
+        <div id="spotify-section">
+            <div class="now-playing-container">
+                <div id="album-art"></div>
                 <div id="track-name">Not Playing</div>
                 <div id="artist-name">-</div>
+                <div id="album-name"></div>
+                
+                <!-- Progress Section -->
+                <div id="progress-container">
+                    <input type="range" id="progress-bar" value="0" style="width: 100%;">
+                    <div id="time-display">
+                        <span id="current-time">0:00</span>
+                        <span id="total-time">0:00</span>
+                    </div>
+                </div>
             </div>
         </div>
-        <div id="progress-container">
-            <input type="range" id="progress-bar" value="0" style="width: 100%;">
-            <div id="time-display">
-                <span id="current-time">0:00</span>
-                <span id="total-time">0:00</span>
-            </div>
-        </div>
-        <div id="controls">
-            <button id="prev-button" class="control-button"><span class="icon">skip_previous</span></button>
-            <button id="play-pause-button" class="paused"><span class="icon">play_arrow</span></button>
-            <button id="next-button" class="control-button"><span class="icon">skip_next</span></button>
-        </div>
-        <button id="mute-toggle-button"><span class="icon">volume_up</span></button>
     </div>
 
     <script>
@@ -494,21 +485,20 @@
 
         // DOM Elements
         const loginContainer = document.getElementById('login-container');
-        const playerContainer = document.getElementById('player-container');
+        const dashboard = document.getElementById('dashboard');
         const clientIdInput = document.getElementById('client-id-input');
         const saveClientIdButton = document.getElementById('save-client-id');
         const loginButton = document.getElementById('login-button');
         const redirectUriElement = document.getElementById('redirect-uri');
-        const prevButton = document.getElementById('prev-button');
-        const playPauseButton = document.getElementById('play-pause-button');
-        const nextButton = document.getElementById('next-button');
         const albumArt = document.getElementById('album-art');
         const trackName = document.getElementById('track-name');
         const artistName = document.getElementById('artist-name');
+        const albumName = document.getElementById('album-name');
         const progressBar = document.getElementById('progress-bar');
         const currentTimeDisplay = document.getElementById('current-time');
         const totalTimeDisplay = document.getElementById('total-time');
-        const muteToggleButton = document.getElementById('mute-toggle-button');
+        const digitalTime = document.getElementById('digital-time');
+        const dateDisplay = document.getElementById('date-display');
 
         // Get the base URL for redirect URI
         const baseUrl = window.location.origin + window.location.pathname;
@@ -524,15 +514,12 @@
         const urlClientId = urlParams.get('client_id');
 
         if (urlClientId) {
-            // Found client ID in URL, save it to localStorage
             clientId = urlClientId;
             localStorage.setItem('spotify_client_id', clientId);
-            // Remove hash from URL without page reload
             history.replaceState(null, null, window.location.pathname);
             clientIdInput.value = clientId;
             loginButton.classList.remove('hidden');
         } else {
-            // Check localStorage as fallback
             clientId = localStorage.getItem('spotify_client_id');
             if (clientId) {
                 clientIdInput.value = clientId;
@@ -560,14 +547,11 @@
                 return;
             }
 
-            // Generate and store PKCE code verifier
             const codeVerifier = generateCodeVerifier();
             localStorage.setItem('spotify_code_verifier', codeVerifier);
 
-            // Generate code challenge from verifier
             const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-            // Generate state parameter
             const state = generateRandomString(16);
             localStorage.setItem('spotify_auth_state', state);
 
@@ -637,38 +621,34 @@
 
         // Initialize app
         async function initApp() {
-            // Check if we have a code in the URL (redirect from Spotify auth)
+            // Initialize the clock first
+            initializeClock();
+
             const queryParams = getQueryParams();
             const code = queryParams.code;
             const state = queryParams.state;
             const error = queryParams.error;
 
-            // Check for errors
             if (error) {
                 console.error(`Authorization error: ${error}`);
                 alert(`Authorization failed: ${error}`);
                 return;
             }
 
-            // Check for authorization code
             if (code) {
                 try {
-                    // Remove the code from the URL without changing the base URL
                     const currentUrl = new URL(window.location.href);
                     currentUrl.searchParams.delete('code');
                     currentUrl.searchParams.delete('state');
                     window.history.replaceState({}, document.title, currentUrl.toString());
 
-                    // Verify state parameter
                     const storedState = localStorage.getItem('spotify_auth_state');
                     if (state !== storedState) {
                         throw new Error('State mismatch, possible CSRF attack');
                     }
 
-                    // Exchange the code for an access token
                     const data = await exchangeCodeForToken(code);
 
-                    // Store token and expiration
                     const accessToken = data.access_token;
                     const refreshToken = data.refresh_token;
                     const expiresIn = data.expires_in;
@@ -679,12 +659,10 @@
                     localStorage.setItem('spotify_token_timestamp', tokenTimestamp);
                     localStorage.setItem('spotify_token_expires_in', expiresIn);
 
-                    // Show player UI
                     loginContainer.style.display = 'none';
-                    playerContainer.style.display = 'block';
+                    dashboard.style.display = 'grid';
 
-                    // Set up player
-                    setupPlayer(accessToken);
+                    setupSpotify(accessToken);
                     return;
                 } catch (error) {
                     console.error('Error exchanging code for token:', error);
@@ -692,7 +670,7 @@
                 }
             }
 
-            // If no code in URL, check if we have a valid stored token
+            // Check if we have a valid stored token
             const storedToken = localStorage.getItem('spotify_access_token');
             const storedTimestamp = localStorage.getItem('spotify_token_timestamp');
             const storedExpiresIn = localStorage.getItem('spotify_token_expires_in');
@@ -702,34 +680,25 @@
                 const elapsed = (now - storedTimestamp) / 1000;
 
                 if (elapsed < storedExpiresIn) {
-                    // Token still valid
                     loginContainer.style.display = 'none';
-                    playerContainer.style.display = 'block';
-
-                    // Set up player
-                    setupPlayer(storedToken);
+                    dashboard.style.display = 'grid';
+                    setupSpotify(storedToken);
                     return;
                 } else {
-                    // Token expired, try to refresh it
                     try {
                         await refreshAccessToken();
-
-                        // If refresh successful, set up player
                         loginContainer.style.display = 'none';
-                        playerContainer.style.display = 'block';
-
-                        setupPlayer(localStorage.getItem('spotify_access_token'));
+                        dashboard.style.display = 'grid';
+                        setupSpotify(localStorage.getItem('spotify_access_token'));
                         return;
                     } catch (error) {
                         console.error('Error refreshing token:', error);
-                        // If refresh fails, we'll continue to show login screen
                     }
                 }
             }
 
-            // If we reach here, we need to login again
             loginContainer.style.display = 'block';
-            playerContainer.style.display = 'none';
+            dashboard.style.display = 'none';
         }
 
         // Refresh the access token using the refresh token
@@ -761,12 +730,10 @@
 
                 const data = await response.json();
 
-                // Update stored tokens
                 localStorage.setItem('spotify_access_token', data.access_token);
                 localStorage.setItem('spotify_token_timestamp', Date.now());
                 localStorage.setItem('spotify_token_expires_in', data.expires_in);
 
-                // If a new refresh token is provided, update it
                 if (data.refresh_token) {
                     localStorage.setItem('spotify_refresh_token', data.refresh_token);
                 }
@@ -774,9 +741,81 @@
                 return data;
             } catch (error) {
                 console.error('Error refreshing token:', error);
-                throw error; // Re-throw to handle in the calling function
+                throw error;
             }
         }
+
+        // Clock functionality
+        function initializeClock() {
+            // Update digital time, date, and analog clock
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        function updateClock() {
+            const now = new Date();
+            
+            // Update digital time
+            const timeString = now.toLocaleTimeString('en-US', {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            digitalTime.textContent = timeString;
+
+            // Update date
+            const dateString = now.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            dateDisplay.textContent = dateString;
+
+            // Update analog clock
+            updateAnalogClock(now);
+        }
+
+        function updateAnalogClock(date) {
+            const hours = date.getHours() % 12;
+            const minutes = date.getMinutes();
+            const seconds = date.getSeconds();
+
+            // Calculate angles (in degrees)
+            const secondAngle = (seconds * 6) - 90; // 6 degrees per second, -90 to start at 12
+            const minuteAngle = (minutes * 6) + (seconds * 0.1) - 90; // 6 degrees per minute + smooth seconds
+            const hourAngle = (hours * 30) + (minutes * 0.5) - 90; // 30 degrees per hour + smooth minutes
+
+            // Get clock hands
+            const hourHand = document.getElementById('hour-hand');
+            const minuteHand = document.getElementById('minute-hand');
+            const secondHand = document.getElementById('second-hand');
+
+            // Apply rotations
+            if (hourHand) {
+                hourHand.style.transform = `rotate(${hourAngle}deg)`;
+                hourHand.style.transformOrigin = '100px 100px';
+            }
+            if (minuteHand) {
+                minuteHand.style.transform = `rotate(${minuteAngle}deg)`;
+                minuteHand.style.transformOrigin = '100px 100px';
+            }
+            if (secondHand) {
+                secondHand.style.transform = `rotate(${secondAngle}deg)`;
+                secondHand.style.transformOrigin = '100px 100px';
+                // Add smooth transition for second hand
+                secondHand.style.transition = seconds === 0 ? 'none' : 'transform 0.1s ease-in-out';
+            }
+        }
+
+        // Track state to avoid unnecessary UI updates
+        let currentTrackId = null;
+        let currentAlbumId = null;
+        let currentProgressMs = 0;
+        let currentPlayState = null;
+        let isUpdatingBackground = false;
+        let currentBackgroundUrl = null;
 
         // Format time from ms to M:SS
         function formatTime(ms) {
@@ -785,114 +824,6 @@
             const minutes = Math.floor(totalSeconds / 60);
             const seconds = totalSeconds % 60;
             return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-        }
-
-        // Global state for volume
-        let currentVolumeBeforeMute = 50; // Default volume to restore to if unmuting from 0
-        let isCurrentlyMuted = false;
-
-        // Track state to avoid unnecessary UI updates
-        let currentTrackId = null;
-        let currentPlayState = null;
-        let currentAlbumId = null; // Added to track current album for art caching
-        let currentProgressMs = 0; // To track progress for polling activity
-        let isUpdatingBackground = false; // Flag to prevent multiple background updates
-        let currentBackgroundUrl = null; // Track current background URL
-
-        // Set up player functionality
-        function setupPlayer(token) {
-            // Set up event listeners for player controls
-            prevButton.addEventListener('click', () => {
-                spotifyApiCall('POST', '/me/player/previous');
-                setTimeout(getCurrentlyPlaying, 500);
-            });
-
-            playPauseButton.addEventListener('click', () => {
-                if (currentPlayState) {
-                    // If currently playing, pause
-                    spotifyApiCall('PUT', '/me/player/pause');
-                    playPauseButton.querySelector('.icon').textContent = 'play_arrow';
-                    playPauseButton.classList.remove('playing');
-                    playPauseButton.classList.add('paused');
-                } else {
-                    // If paused or stopped, play
-                    spotifyApiCall('PUT', '/me/player/play');
-                    playPauseButton.querySelector('.icon').textContent = 'pause';
-                    playPauseButton.classList.remove('paused');
-                    playPauseButton.classList.add('playing');
-                }
-                setTimeout(getCurrentlyPlaying, 500);
-            });
-
-            nextButton.addEventListener('click', () => {
-                spotifyApiCall('POST', '/me/player/next');
-                setTimeout(getCurrentlyPlaying, 500);
-            });
-
-            progressBar.addEventListener('input', () => {
-                // Optional: Could provide visual feedback while dragging
-                // For now, we only seek when the user releases (change event)
-            });
-
-            progressBar.addEventListener('change', () => {
-                const newPosition = parseInt(progressBar.value);
-                spotifyApiCall('PUT', `/me/player/seek?position_ms=${newPosition}`);
-                // Update UI optimistically or wait for polling
-                setTimeout(getCurrentlyPlaying, 250); // Quicker update after seek
-            });
-
-            muteToggleButton.addEventListener('click', async () => {
-                let targetVolume;
-                if (isCurrentlyMuted) {
-                    targetVolume = currentVolumeBeforeMute > 0 ? currentVolumeBeforeMute : 50; // Restore or default
-                    muteToggleButton.querySelector('.icon').textContent = 'volume_up'; // Immediately update UI
-                    isCurrentlyMuted = false; // Immediately update state
-                } else {
-                    // Before muting, store current volume
-                    const playerData = await spotifyApiCall('GET', '/me/player');
-                    if (playerData && playerData.device && typeof playerData.device.volume_percent !== 'undefined') {
-                        currentVolumeBeforeMute = playerData.device.volume_percent;
-                    }
-                    targetVolume = 0;
-                    muteToggleButton.querySelector('.icon').textContent = 'volume_off'; // Immediately update UI
-                    isCurrentlyMuted = true; // Immediately update state
-                }
-                await spotifyApiCall('PUT', `/me/player/volume?volume_percent=${targetVolume}`);
-                setTimeout(getCurrentlyPlaying, 250); // Refresh state from API
-            });
-
-            // Start polling for current track
-            getCurrentlyPlaying();
-            const startValue = 2000;
-            // Adaptive polling - increase interval when inactive
-            let pollingInterval = startValue; // Start with 2 seconds
-            const maxPollingInterval = 10000; // Max 10 seconds between polls
-            let inactiveTime = 0;
-
-            function adaptivePolling() {
-                getCurrentlyPlaying()
-                    .then(hasActivity => {
-                        // If track changed or playback state changed
-                        if (hasActivity) {
-                            inactiveTime = 0;
-                            pollingInterval = startValue; // Reset to 5 seconds
-                        } else {
-                            inactiveTime += pollingInterval;
-                            // Gradually increase polling interval when inactive
-                            if (inactiveTime > 30000) { // After 30 seconds of inactivity
-                                pollingInterval = Math.min(pollingInterval * 1.5, maxPollingInterval);
-                            }
-                        }
-                        // Schedule next check
-                        setTimeout(adaptivePolling, pollingInterval);
-                    });
-            }
-
-            // Start adaptive polling
-            adaptivePolling();
-
-            // Start separate timer for updating playback position
-            startPlaybackTimer();
         }
 
         // Timer for updating the playback position without API calls
@@ -917,6 +848,49 @@
             }, 1000);
         }
 
+        // Set up Spotify functionality
+        function setupSpotify(token) {
+            // Set up event listeners for progress bar
+            progressBar.addEventListener('input', () => {
+                // Optional: Could provide visual feedback while dragging
+            });
+
+            progressBar.addEventListener('change', () => {
+                const newPosition = parseInt(progressBar.value);
+                spotifyApiCall('PUT', `/me/player/seek?position_ms=${newPosition}`);
+                setTimeout(getCurrentlyPlaying, 250); // Quicker update after seek
+            });
+
+            // Start polling for current track
+            getCurrentlyPlaying();
+            
+            // Start separate timer for updating playback position
+            startPlaybackTimer();
+            
+            // Adaptive polling
+            let pollingInterval = 2000;
+            const maxPollingInterval = 10000;
+            let inactiveTime = 0;
+
+            function adaptivePolling() {
+                getCurrentlyPlaying()
+                    .then(hasActivity => {
+                        if (hasActivity) {
+                            inactiveTime = 0;
+                            pollingInterval = 2000;
+                        } else {
+                            inactiveTime += pollingInterval;
+                            if (inactiveTime > 30000) {
+                                pollingInterval = Math.min(pollingInterval * 1.5, maxPollingInterval);
+                            }
+                        }
+                        setTimeout(adaptivePolling, pollingInterval);
+                    });
+            }
+
+            adaptivePolling();
+        }
+
         // Make API calls to Spotify
         async function spotifyApiCall(method, endpoint, body = null) {
             const token = localStorage.getItem('spotify_access_token');
@@ -935,15 +909,12 @@
                     });
 
                     if (response.status === 401) {
-                        // Token expired, try to refresh
                         try {
                             await refreshAccessToken();
-                            // If refresh successful, retry the original API call
                             retryCount++;
                             continue;
                         } catch (refreshError) {
                             console.error('Token refresh failed:', refreshError);
-                            // If refresh fails, clear tokens and reload
                             localStorage.removeItem('spotify_access_token');
                             localStorage.removeItem('spotify_refresh_token');
                             alert('Your session has expired. Please log in again.');
@@ -953,18 +924,15 @@
                     }
 
                     if (response.status === 204) {
-                        return true; // Success but no content
+                        return true;
                     }
 
                     if (response.ok) {
-                        // Only try to parse as JSON if there's content
                         if (response.status !== 204) {
                             const text = await response.text();
-                            // Check if there's any content to parse
                             if (!text) return null;
 
                             try {
-                                // Check if the response starts with a valid JSON character
                                 if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
                                     return JSON.parse(text);
                                 } else {
@@ -979,7 +947,6 @@
                         }
                         return true;
                     } else if (response.status === 429) {
-                        // Rate limit exceeded, wait and retry
                         const retryAfter = response.headers.get('Retry-After') || 5;
                         console.log(`Rate limited, waiting ${retryAfter} seconds...`);
                         await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
@@ -992,7 +959,6 @@
                 } catch (error) {
                     console.error('API Request Failed:', error);
                     if (retryCount < maxRetries) {
-                        // Wait before retrying (exponential backoff)
                         const waitTime = Math.pow(2, retryCount) * 1000;
                         console.log(`Retrying in ${waitTime / 1000} seconds...`);
                         await new Promise(resolve => setTimeout(resolve, waitTime));
@@ -1011,148 +977,106 @@
                 const data = await spotifyApiCall('GET', '/me/player/currently-playing');
                 let activityDetectedForPolling = false;
 
-                if (data) { // If data is not null (API call returned something)
-                    // Always update mute button state if device info is available
-                    if (data.device && typeof data.device.volume_percent !== 'undefined') {
-                        const previousMuteState = isCurrentlyMuted;
-                        const actualVolume = data.device.volume_percent;
+                if (data && data.item) {
+                    const newTrackId = data.item.id;
+                    const newAlbumId = data.item.album ? data.item.album.id : null;
+                    const newPlayState = data.is_playing;
+                    const newProgress = typeof data.progress_ms !== 'undefined' ? data.progress_ms : currentProgressMs;
 
-                        if (actualVolume === 0) {
-                            isCurrentlyMuted = true;
-                            muteToggleButton.querySelector('.icon').textContent = 'volume_off';
-                            // currentVolumeBeforeMute retains its value from when it was last non-zero
+                    const trackChanged = currentTrackId !== newTrackId;
+                    const albumChanged = newAlbumId !== currentAlbumId;
+                    const playStateChanged = currentPlayState !== newPlayState;
+                    const progressChanged = currentProgressMs !== newProgress;
+
+                    if (trackChanged) {
+                        trackName.textContent = data.item.name;
+                        artistName.textContent = data.item.artists.map(artist => artist.name).join(', ');
+                        albumName.textContent = data.item.album ? data.item.album.name : '';
+                        currentTrackId = newTrackId;
+                        activityDetectedForPolling = true;
+
+                        // Fetch artist image when track changes
+                        if (data.item.artists && data.item.artists.length > 0) {
+                            const artistId = data.item.artists[0].id;
+                            fetchArtistImage(artistId);
                         } else {
-                            isCurrentlyMuted = false;
-                            muteToggleButton.querySelector('.icon').textContent = 'volume_up';
-                            currentVolumeBeforeMute = actualVolume; // Store the current non-zero volume
-                        }
-                        if (isCurrentlyMuted !== previousMuteState) {
-                            activityDetectedForPolling = true; // Mute state change is an activity
+                            updateBackground();
                         }
                     }
 
-                    // Handle track-specific information
-                    if (data.item) {
-                        const newTrackId = data.item.id;
-                        const newAlbumId = data.item.album ? data.item.album.id : null;
-                        const newPlayState = data.is_playing;
-                        const newProgress = typeof data.progress_ms !== 'undefined' ? data.progress_ms : currentProgressMs;
+                    if (playStateChanged || trackChanged) {
+                        currentPlayState = newPlayState;
+                        // Restart the playback timer when play state changes
+                        startPlaybackTimer();
+                        activityDetectedForPolling = true;
+                    }
 
-                        const trackChanged = currentTrackId !== newTrackId;
-                        const playStateChanged = currentPlayState !== newPlayState;
-                        const albumChanged = newAlbumId !== currentAlbumId;
-                        const progressChanged = currentProgressMs !== newProgress;
-
-                        // Update play/pause button icon based on play state
-                        if (newPlayState !== currentPlayState) {
-                            playPauseButton.querySelector('.icon').textContent = newPlayState ? 'pause' : 'play_arrow';
-                            if (newPlayState) {
-                                playPauseButton.classList.remove('paused');
-                                playPauseButton.classList.add('playing');
-                            } else {
-                                playPauseButton.classList.remove('playing');
-                                playPauseButton.classList.add('paused');
-                            }
-
-                            // Restart the playback timer when play state changes
-                            startPlaybackTimer();
+                    if (progressChanged || trackChanged) {
+                        if (data.item.duration_ms) {
+                            progressBar.max = data.item.duration_ms;
+                            totalTimeDisplay.textContent = formatTime(data.item.duration_ms);
                         }
+                        progressBar.value = newProgress;
+                        currentTimeDisplay.textContent = formatTime(newProgress);
+                        currentProgressMs = newProgress;
+                        if (progressChanged && !trackChanged && !playStateChanged) activityDetectedForPolling = true;
+                    }
 
-                        if (trackChanged || playStateChanged) {
-                            trackName.textContent = data.item.name;
-                            artistName.textContent = data.item.artists.map(artist => artist.name).join(', ');
-                            currentTrackId = newTrackId;
-                            currentPlayState = newPlayState;
-                            activityDetectedForPolling = true;
+                    if (newAlbumId && (albumChanged || !albumArt.hasChildNodes())) {
+                        currentAlbumId = newAlbumId;
+                        const albumArtCacheKey = `spotify_album_art_${newAlbumId}`;
+                        let cachedArtUrl = localStorage.getItem(albumArtCacheKey);
 
-                            // Reset the playback timer on track change
-                            if (trackChanged) {
-                                startPlaybackTimer();
-
-                                // Fetch artist image when track changes - pass the artist data directly
-                                if (data.item.artists && data.item.artists.length > 0) {
-                                    const artistId = data.item.artists[0].id;
-                                    // Let the function handle the logic, no need to check artistId here
-                                    fetchArtistImage(artistId);
+                        if (cachedArtUrl) {
+                            const img = new Image();
+                            img.onload = () => {
+                                albumArt.innerHTML = `<img src="${cachedArtUrl}" alt="Album Art" style="width:100%; height:100%; border-radius:8px;">`;
+                            };
+                            img.onerror = () => {
+                                localStorage.removeItem(albumArtCacheKey);
+                                if (data.item.album) {
+                                    fetchAndSetAlbumArt(data.item.album, newAlbumId);
                                 } else {
-                                    // Fallback to album art
-                                    updateBackground();
+                                    albumArt.innerHTML = '';
                                 }
-                            }
+                            };
+                            img.src = cachedArtUrl;
+                        } else if (data.item.album && data.item.album.images && data.item.album.images.length > 0) {
+                            fetchAndSetAlbumArt(data.item.album, newAlbumId);
+                        } else {
+                            albumArt.innerHTML = '';
                         }
-
-                        if (progressChanged || trackChanged) { // Update progress if it changed or track changed
-                            if (data.item.duration_ms) {
-                                progressBar.max = data.item.duration_ms;
-                                totalTimeDisplay.textContent = formatTime(data.item.duration_ms);
-                            }
-                            progressBar.value = newProgress;
-                            currentTimeDisplay.textContent = formatTime(newProgress);
-                            currentProgressMs = newProgress;
-                            if (progressChanged && !trackChanged && !playStateChanged) activityDetectedForPolling = true; // if only progress changed
-                        }
-
-                        if (newAlbumId && (albumChanged || !albumArt.hasChildNodes())) {
-                            currentAlbumId = newAlbumId;
-                            const albumArtCacheKey = `spotify_album_art_${newAlbumId}`;
-                            let cachedArtUrl = localStorage.getItem(albumArtCacheKey);
-
-                            if (cachedArtUrl) {
-                                const img = new Image();
-                                img.onload = () => {
-                                    albumArt.innerHTML = `<img src="${cachedArtUrl}" alt="Album Art" style="width:100%; height:100%; border-radius:8px;">`;
-                                };
-                                img.onerror = () => {
-                                    localStorage.removeItem(albumArtCacheKey);
-                                    if (data.item.album) {
-                                        fetchAndSetAlbumArt(data.item.album, newAlbumId);
-                                    } else {
-                                        albumArt.innerHTML = '';
-                                    }
-                                };
-                                img.src = cachedArtUrl;
-                            } else if (data.item.album && data.item.album.images && data.item.album.images.length > 0) {
-                                fetchAndSetAlbumArt(data.item.album, newAlbumId);
-                            } else {
-                                albumArt.innerHTML = '';
-                            }
-                            activityDetectedForPolling = true;
-                        }
-                        return activityDetectedForPolling;
-                    } else if (currentTrackId !== null) { // Music stopped (no item, but was playing before)
-                        currentTrackId = null;
-                        currentPlayState = null;
-                        currentAlbumId = null;
-                        currentProgressMs = 0;
-                        trackName.textContent = 'Not Playing';
-                        artistName.textContent = '-';
-                        albumArt.innerHTML = '';
-                        progressBar.value = 0;
-                        progressBar.max = 0;
-                        currentTimeDisplay.textContent = '0:00';
-                        totalTimeDisplay.textContent = '0:00';
-
-                        // Clear the playback timer when playback stops
-                        if (playbackTimerId) {
-                            clearInterval(playbackTimerId);
-                            playbackTimerId = null;
-                        }
-
-                        // Clear background when no track is playing
-                        document.body.style.setProperty('--album-bg', 'none');
-
-                        return true; // Activity detected - state changed to not playing
+                        activityDetectedForPolling = true;
                     }
-                } else if (data === null && currentTrackId !== null) { // API call failed, but we thought it was playing
-                    // If API call fails (data is null), and we thought a track was playing, treat as state change.
-                    currentTrackId = null; // Reset to trigger login/refresh if needed by other logic
-                    return true; // Indicate activity to potentially slow down polling or re-check auth
+                    return activityDetectedForPolling;
+                } else if (currentTrackId !== null) {
+                    currentTrackId = null;
+                    currentPlayState = null;
+                    currentAlbumId = null;
+                    currentProgressMs = 0;
+                    trackName.textContent = 'Not Playing';
+                    artistName.textContent = '-';
+                    albumName.textContent = '';
+                    albumArt.innerHTML = '';
+                    progressBar.value = 0;
+                    progressBar.max = 0;
+                    currentTimeDisplay.textContent = '0:00';
+                    totalTimeDisplay.textContent = '0:00';
+
+                    // Clear the playback timer when playback stops
+                    if (playbackTimerId) {
+                        clearInterval(playbackTimerId);
+                        playbackTimerId = null;
+                    }
+
+                    document.body.style.setProperty('--album-bg', 'none');
+                    return true;
                 }
 
-                return activityDetectedForPolling; // Return if any activity (mute, track, playstate, album, progress) was detected
+                return activityDetectedForPolling;
             } catch (error) {
                 console.error('Error updating player:', error);
-                return false; // No activity on error
+                return false;
             }
         }
 
@@ -1163,11 +1087,10 @@
 
             try {
                 if (!artistId) {
-                    await updateBackground(); // Fallback if no artist ID
+                    await updateBackground();
                     return;
                 }
 
-                // Check cache first
                 const artistImageCacheKey = `spotify_artist_image_${artistId}`;
                 const cachedArtistImageUrl = localStorage.getItem(artistImageCacheKey);
 
@@ -1179,12 +1102,10 @@
                     return;
                 }
 
-                // If not in cache, fetch from API
                 const artistData = await spotifyApiCall('GET', `/artists/${artistId}`);
                 if (artistData && artistData.images && artistData.images.length > 0) {
                     const artistImageUrl = artistData.images[0].url;
                     if (currentBackgroundUrl !== artistImageUrl) {
-                        // setBackgroundImage will handle preloading, so we don't need to do it here
                         try {
                             localStorage.setItem(artistImageCacheKey, artistImageUrl);
                         } catch (e) {
@@ -1194,12 +1115,11 @@
                         currentBackgroundUrl = artistImageUrl;
                     }
                 } else {
-                    // Fallback to album art if no artist image found
                     await updateBackground();
                 }
             } catch (error) {
                 console.error("Error fetching artist image:", error);
-                await updateBackground(); // Fallback on error
+                await updateBackground();
             } finally {
                 isUpdatingBackground = false;
             }
@@ -1217,22 +1137,16 @@
 
         // Helper function to set background image with transition
         async function setBackgroundImage(imageUrl) {
-            // First, ensure the new image is fully loaded to prevent flicker
             await preloadImage(imageUrl);
             
-            // Set the next background only after image is loaded
             document.body.style.setProperty('--album-bg-next', `url("${imageUrl}")`);
 
-            // Small delay to ensure CSS has processed the new background
             await new Promise(resolve => setTimeout(resolve, 50));
 
-            // Start transition by fading out current background and fading in next
             document.body.style.setProperty('--bg-opacity', '0');
 
-            // Wait for transition to complete before swapping backgrounds
             await new Promise(resolve => setTimeout(resolve, 100));
 
-            // After transition completes, swap the backgrounds
             document.body.style.setProperty('--album-bg', `url("${imageUrl}")`);
             document.body.style.setProperty('--album-bg-next', 'none');
             document.body.style.setProperty('--bg-opacity', '1');
@@ -1240,8 +1154,6 @@
 
         // Helper function to update the background with current album art
         async function updateBackground() {
-            // This function is now a fallback, it doesn't need its own isUpdatingBackground check,
-            // as it's only called from fetchArtistImage which controls the flag.
             if (!currentAlbumId) return;
 
             try {
@@ -1249,7 +1161,6 @@
                 const cachedArtUrl = localStorage.getItem(albumArtCacheKey);
 
                 if (cachedArtUrl && currentBackgroundUrl !== cachedArtUrl) {
-                    // setBackgroundImage will handle preloading
                     await setBackgroundImage(cachedArtUrl);
                     currentBackgroundUrl = cachedArtUrl;
                 }
@@ -1275,11 +1186,11 @@
                 };
                 img.onerror = () => {
                     console.error("Failed to load album art image:", imageUrl);
-                    albumArt.innerHTML = ''; // Clear art on error
+                    albumArt.innerHTML = '';
                 };
                 img.src = imageUrl;
             } else {
-                albumArt.innerHTML = ''; // No art available for this album
+                albumArt.innerHTML = '';
             }
         }
 
