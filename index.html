@@ -430,30 +430,30 @@
             const minutes = date.getMinutes();
             const seconds = date.getSeconds();
 
-            // Calculate angles (in degrees)
-            const secondAngle = (seconds * 6) - 90; // 6 degrees per second, -90 to start at 12
-            const minuteAngle = (minutes * 6) + (seconds * 0.1) - 90; // 6 degrees per minute + smooth seconds
-            const hourAngle = (hours * 30) + (minutes * 0.5) - 90; // 30 degrees per hour + smooth minutes
+            // Calculate angles (in degrees) - trying without the -90 offset first
+            const secondAngle = (seconds * 6); // 6 degrees per second
+            const minuteAngle = (minutes * 6) + (seconds * 0.1); // 6 degrees per minute + smooth seconds  
+            const hourAngle = (hours * 30) + (minutes * 0.5); // 30 degrees per hour + smooth minutes
 
             // Get clock hands
             const hourHand = document.getElementById('hour-hand');
             const minuteHand = document.getElementById('minute-hand');
             const secondHand = document.getElementById('second-hand');
 
-            // Apply rotations
+            // Apply rotations using SVG transform attribute
             if (hourHand) {
-                hourHand.style.transform = `rotate(${hourAngle}deg)`;
-                hourHand.style.transformOrigin = '100px 100px';
+                hourHand.setAttribute('transform', `rotate(${hourAngle} 100 100)`);
+            } else {
             }
             if (minuteHand) {
-                minuteHand.style.transform = `rotate(${minuteAngle}deg)`;
-                minuteHand.style.transformOrigin = '100px 100px';
+                minuteHand.setAttribute('transform', `rotate(${minuteAngle} 100 100)`);
+            } else {
+                console.log('Minute hand element not found!');
             }
             if (secondHand) {
-                secondHand.style.transform = `rotate(${secondAngle}deg)`;
-                secondHand.style.transformOrigin = '100px 100px';
-                // Add smooth transition for second hand
-                secondHand.style.transition = seconds === 0 ? 'none' : 'transform 0.1s ease-in-out';
+                secondHand.setAttribute('transform', `rotate(${secondAngle} 100 100)`);
+            } else {
+                console.log('Second hand element not found!');
             }
         }
 
