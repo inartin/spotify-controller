@@ -36,93 +36,11 @@ async function generateCodeChallenge(codeVerifier) {
         .replace(/\//g, '_');
 }
 
-// DOM Elements
-const loginContainer = document.getElementById('login-container');
-const dashboard = document.getElementById('dashboard');
-const clientIdInput = document.getElementById('client-id-input');
-const saveClientIdButton = document.getElementById('save-client-id');
-const loginButton = document.getElementById('login-button');
-const redirectUriElement = document.getElementById('redirect-uri');
-const albumArt = document.getElementById('album-art');
-const trackName = document.getElementById('track-name');
-const artistName = document.getElementById('artist-name');
-const albumName = document.getElementById('album-name');
-const progressBar = document.getElementById('progress-bar');
-const currentTimeDisplay = document.getElementById('current-time');
-const totalTimeDisplay = document.getElementById('total-time');
-const dateDisplay = document.getElementById('date-display');
-const playPauseBtn = document.getElementById('play-pause-btn');
-
-// Get the base URL for redirect URI
-const baseUrl = window.location.origin + window.location.pathname;
-
-// Set the redirect URI text and URL example
-redirectUriElement.textContent = baseUrl;
-const urlExample = document.getElementById('url-example');
-urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
-
-// Check URL hash for client ID first
-let clientId;
-const urlParams = new URLSearchParams(window.location.hash.substring(1));
-const urlClientId = urlParams.get('client_id');
-
-if (urlClientId) {
-    clientId = urlClientId;
-    localStorage.setItem('spotify_client_id', clientId);
-    history.replaceState(null, null, window.location.pathname);
-    clientIdInput.value = clientId;
-    loginButton.classList.remove('hidden');
-} else {
-    clientId = localStorage.getItem('spotify_client_id');
-    if (clientId) {
-        clientIdInput.value = clientId;
-        loginButton.classList.remove('hidden');
-    }
-}
-
-// Save Client ID to localStorage
-saveClientIdButton.addEventListener('click', () => {
-    const newClientId = clientIdInput.value.trim();
-    if (newClientId) {
-        localStorage.setItem('spotify_client_id', newClientId);
-        clientId = newClientId;
-        loginButton.classList.remove('hidden');
-        alert('Client ID saved successfully!');
-    } else {
-        alert('Please enter a valid Client ID');
-    }
-});
-
-// Handle Login
-loginButton.addEventListener('click', async () => {
-    if (!clientId) {
-        alert('Please enter your Spotify Client ID first');
-        return;
-    }
-
-    const codeVerifier = generateCodeVerifier();
-    localStorage.setItem('spotify_code_verifier', codeVerifier);
-
-    const codeChallenge = await generateCodeChallenge(codeVerifier);
-
-    const state = generateRandomString(16);
-    localStorage.setItem('spotify_auth_state', state);
-
-    const authUrl = new URL(SPOTIFY_AUTH_ENDPOINT);
-    const params = {
-        client_id: clientId,
-        redirect_uri: baseUrl,
-        scope: SCOPES.join(' '),
-        response_type: 'code',
-        code_challenge_method: 'S256',
-        code_challenge: codeChallenge,
-        state: state,
-        show_dialog: true
-    };
-
-    authUrl.search = new URLSearchParams(params).toString();
-    window.location.href = authUrl.toString();
-});
+// Global variables that will be initialized in initApp()
+let loginContainer, dashboard, clientIdInput, saveClientIdButton, loginButton;
+let redirectUriElement, albumArt, trackName, artistName, albumName;
+let progressBar, currentTimeDisplay, totalTimeDisplay, dateDisplay, playPauseBtn;
+let baseUrl, clientId;
 
 // Parse query parameters from URL
 function getQueryParams() {
@@ -172,9 +90,129 @@ async function exchangeCodeForToken(code) {
     return await response.json();
 }
 
+// Initialize DOM elements and set up event listeners
+function initializeDOMElements() {
+    // Get DOM elements
+    loginContainer = document.getElementById('login-container');
+    dashboard = document.getElementById('dashboard');
+    clientIdInput = document.getElementById('client-id-input');
+    saveClientIdButton = document.getElementById('save-client-id');
+    loginButton = document.getElementById('login-button');
+    redirectUriElement = document.getElementById('redirect-uri');
+    albumArt = document.getElementById('album-art');
+    trackName = document.getElementById('track-name');
+    artistName = document.getElementById('artist-name');
+    albumName = document.getElementById('album-name');
+    progressBar = document.getElementById('progress-bar');
+    currentTimeDisplay = document.getElementById('current-time');
+    totalTimeDisplay = document.getElementById('total-time');
+    dateDisplay = document.getElementById('date-display');
+    playPauseBtn = document.getElementById('play-pause-btn');
+
+    // Get the base URL for redirect URI
+    baseUrl = window.location.origin + window.location.pathname;
+
+    // Set the redirect URI text and URL example
+    redirectUriElement.textContent = baseUrl;
+    const urlExample = document.getElementById('url-example');
+    urlExample.textContent = baseUrl + '#client_id=YOUR_CLIENT_ID';
+
+    // Add copy button functionality
+    const copyUriButton = document.getElementById('copy-uri');
+    if (copyUriButton) {
+        copyUriButton.addEventListener('click', () => {
+            navigator.clipboard.writeText(baseUrl).then(() => {
+                copyUriButton.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyUriButton.textContent = 'Copy';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        });
+    }
+}
+
+// Initialize client ID from URL or localStorage
+function initializeClientId() {
+    // Check URL hash for client ID first
+    const urlParams = new URLSearchParams(window.location.hash.substring(1));
+    const urlClientId = urlParams.get('client_id');
+
+    if (urlClientId) {
+        clientId = urlClientId;
+        localStorage.setItem('spotify_client_id', clientId);
+        history.replaceState(null, null, window.location.pathname);
+        clientIdInput.value = clientId;
+        loginButton.classList.remove('hidden');
+    } else {
+        clientId = localStorage.getItem('spotify_client_id');
+        if (clientId) {
+            clientIdInput.value = clientId;
+            loginButton.classList.remove('hidden');
+        }
+    }
+}
+
+// Set up event listeners
+function setupEventListeners() {
+    // Save Client ID to localStorage
+    saveClientIdButton.addEventListener('click', () => {
+        const newClientId = clientIdInput.value.trim();
+        if (newClientId) {
+            localStorage.setItem('spotify_client_id', newClientId);
+            clientId = newClientId;
+            loginButton.classList.remove('hidden');
+            alert('Client ID saved successfully!');
+        } else {
+            alert('Please enter a valid Client ID');
+        }
+    });
+
+    // Handle Login
+    loginButton.addEventListener('click', async () => {
+        if (!clientId) {
+            alert('Please enter your Spotify Client ID first');
+            return;
+        }
+
+        const codeVerifier = generateCodeVerifier();
+        localStorage.setItem('spotify_code_verifier', codeVerifier);
+
+        const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+        const state = generateRandomString(16);
+        localStorage.setItem('spotify_auth_state', state);
+
+        const authUrl = new URL(SPOTIFY_AUTH_ENDPOINT);
+        const params = {
+            client_id: clientId,
+            redirect_uri: baseUrl,
+            scope: SCOPES.join(' '),
+            response_type: 'code',
+            code_challenge_method: 'S256',
+            code_challenge: codeChallenge,
+            state: state,
+            show_dialog: true
+        };
+
+        authUrl.search = new URLSearchParams(params).toString();
+        window.location.href = authUrl.toString();
+    });
+}
+
 // Initialize app
 async function initApp() {
-    // Initialize the clock first
+    // Initialize DOM elements first
+    initializeDOMElements();
+    
+    // Initialize client ID handling
+    initializeClientId();
+    
+    // Set up event listeners
+    setupEventListeners();
+
+    // Initialize the clock
     initializeClock();
 
     const queryParams = getQueryParams();
