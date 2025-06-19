@@ -5,512 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Clock & Now Playing</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <!-- SVG Analog Clock Implementation -->
-    <style>
-        :root {
-            /* Fluid spacing system */
-            --spacing-xs: clamp(4px, 0.8vw, 8px);
-            --spacing-sm: clamp(6px, 1.2vw, 12px);
-            --spacing-md: clamp(12px, 2vw, 20px);
-            --spacing-lg: clamp(16px, 2.5vw, 30px);
-            --spacing-xl: clamp(20px, 3vw, 40px);
-            
-            /* Fluid font sizes */
-            --font-xs: clamp(10px, 1.5vw, 14px);
-            --font-sm: clamp(12px, 2vw, 16px);
-            --font-md: clamp(14px, 2.5vw, 18px);
-            --font-lg: clamp(16px, 3vw, 24px);
-            --font-xl: clamp(20px, 3.5vw, 28px);
-            --font-xxl: clamp(24px, 4vw, 36px);
-        }
-
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden; /* Prevent scrolling for full dashboard */
-        }
-
-        body {
-            font-family: 'SF Pro Display', -webkit-system-font, 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #000000;
-            color: white;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #login-container {
-            text-align: center;
-            padding: var(--spacing-md);
-            max-width: min(90%, 600px);
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-        }
-
-        /* Keep the existing background system */
-        body {
-            --album-bg: none;
-            --album-bg-next: none;
-            --bg-opacity: 1;
-            transition: --bg-opacity 0.5s ease-in-out;
-        }
-
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: var(--album-bg);
-            background-size: cover;
-            background-position: center;
-            filter: blur(20px) brightness(0.4);
-            opacity: var(--bg-opacity);
-            z-index: -1;
-            transform: scale(1.1);
-            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        body::after {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: var(--album-bg-next);
-            background-size: cover;
-            background-position: center;
-            filter: blur(20px) brightness(0.4);
-            opacity: calc(1 - var(--bg-opacity));
-            z-index: -1;
-            transform: scale(1.1);
-            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        #dashboard {
-            display: none;
-            width: 100%;
-            height: 100vh;
-            padding: var(--spacing-xl);
-            box-sizing: border-box;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--spacing-xl);
-            align-items: center;
-            z-index: 1;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        /* Login Button Styling */
-        button {
-            background-color: rgba(29, 185, 84, 0.2);
-            color: white;
-            border: none;
-            padding: clamp(12px, 2vw, 20px) clamp(20px, 4vw, 36px);
-            border-radius: 30px;
-            font-weight: bold;
-            cursor: pointer;
-            margin: var(--spacing-sm);
-            font-size: var(--font-md);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: all 0.2s ease;
-        }
-
-        button:hover,
-        button:active {
-            background-color: rgba(30, 215, 95, 0.3);
-            transform: scale(1.05);
-        }
-
-        /* Clock Section */
-        #clock-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-        }
-
-        #clock-container {
-            position: relative;
-            margin-bottom: var(--spacing-lg);
-        }
-
-        #analog-clock {
-            width: clamp(180px, 28vw, 400px);
-            height: clamp(180px, 28vw, 400px);
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-
-        #digital-time {
-            font-size: var(--font-lg);
-            font-weight: 300;
-            color: rgba(255, 255, 255, 0.8);
-            text-align: center;
-            letter-spacing: 2px;
-            margin-top: var(--spacing-md);
-        }
-
-        #date-display {
-            font-size: var(--font-xl);
-            font-weight: 300;
-            color: rgba(255, 255, 255, 0.6);
-            text-align: center;
-            margin-top: var(--spacing-sm);
-        }
-
-        /* Spotify Section */
-        #spotify-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            padding: var(--spacing-xl);
-        }
-
-        .now-playing-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: var(--spacing-xl);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            max-width: min(500px, 90vw);
-            width: 100%;
-        }
-
-        #album-art {
-            width: clamp(140px, 20vw, 250px);
-            height: clamp(140px, 20vw, 250px);
-            box-shadow: 0 8px 60px rgba(0, 0, 0, 0.5);
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: var(--spacing-lg);
-        }
-
-        #track-name {
-            font-size: var(--font-xxl);
-            font-weight: 600;
-            margin-bottom: var(--spacing-sm);
-            line-height: 1.2;
-            word-break: break-word;
-            hyphens: auto;
-        }
-
-        #artist-name {
-            font-size: var(--font-lg);
-            color: rgba(255, 255, 255, 0.7);
-            font-weight: 400;
-            margin-bottom: var(--spacing-lg);
-            word-break: break-word;
-        }
-
-        #album-name {
-            font-size: var(--font-md);
-            color: rgba(255, 255, 255, 0.5);
-            font-weight: 300;
-            font-style: italic;
-            margin-bottom: var(--spacing-lg);
-            word-break: break-word;
-        }
-
-        /* Progress Section */
-        #progress-container {
-            width: 100%;
-            margin-top: var(--spacing-md);
-        }
-
-        #progress-bar {
-            width: 100%;
-            cursor: pointer;
-            height: clamp(6px, 1vw, 10px);
-            -webkit-appearance: none;
-            appearance: none;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
-            outline: none;
-            margin-bottom: var(--spacing-sm);
-        }
-
-        #progress-bar::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: clamp(14px, 2vw, 20px);
-            height: clamp(14px, 2vw, 20px);
-            background: #1DB954;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-            transition: background 0.3s ease, transform 0.1s ease;
-        }
-
-        #progress-bar::-webkit-slider-thumb:hover {
-            transform: scale(1.1);
-        }
-
-        #progress-bar::-moz-range-thumb {
-            width: clamp(14px, 2vw, 20px);
-            height: clamp(14px, 2vw, 20px);
-            background: #1DB954;
-            border-radius: 50%;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-            transition: background 0.3s ease;
-        }
-
-        /* Progress bar states for different play states */
-        #progress-bar.paused::-webkit-slider-thumb {
-            background: rgba(255, 255, 255, 0.6);
-        }
-
-        #progress-bar.paused::-moz-range-thumb {
-            background: rgba(255, 255, 255, 0.6);
-        }
-
-        #progress-bar.not-playing::-webkit-slider-thumb {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        #progress-bar.not-playing::-moz-range-thumb {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        #time-display {
-            display: flex;
-            justify-content: space-between;
-            font-size: var(--font-xs);
-            color: rgba(255, 255, 255, 0.6);
-            font-weight: 300;
-            letter-spacing: 0.5px;
-        }
-
-        .setup-instructions {
-            background-color: rgba(40, 40, 40, 0.9);
-            backdrop-filter: blur(10px);
-            padding: var(--spacing-md);
-            border-radius: 12px;
-            margin-bottom: var(--spacing-md);
-            max-width: 100%;
-            text-align: left;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .setup-instructions code {
-            background-color: rgba(18, 18, 18, 0.8);
-            padding: 2px 5px;
-            border-radius: 3px;
-            word-break: break-all;
-        }
-
-        /* Enhanced Mobile Responsiveness with better scaling */
-        
-        /* Large screens */
-        @media (min-width: 1400px) {
-            #dashboard {
-                max-width: 1200px;
-                margin: 0 auto;
-            }
-        }
-
-        /* Medium screens - laptops */
-        @media (max-width: 1400px) {
-            #dashboard {
-                gap: var(--spacing-lg);
-                padding: var(--spacing-lg);
-            }
-        }
-
-        /* Small laptops and large tablets */
-        @media (max-width: 1200px) {
-            #dashboard {
-                gap: var(--spacing-md);
-                padding: var(--spacing-md);
-            }
-            
-            #analog-clock {
-                width: clamp(150px, 25vw, 300px);
-                height: clamp(150px, 25vw, 300px);
-            }
-            
-            #album-art {
-                width: clamp(120px, 18vw, 200px);
-                height: clamp(120px, 18vw, 200px);
-            }
-        }
-
-        /* Tablets in landscape and portrait */
-        @media (max-width: 1024px) {
-            #dashboard {
-                gap: var(--spacing-sm);
-                padding: var(--spacing-sm);
-            }
-
-            #analog-clock {
-                width: clamp(130px, 22vw, 250px);
-                height: clamp(130px, 22vw, 250px);
-            }
-
-            #album-art {
-                width: clamp(100px, 16vw, 180px);
-                height: clamp(100px, 16vw, 180px);
-            }
-            
-            .now-playing-container {
-                padding: var(--spacing-md);
-                max-width: 90vw;
-            }
-        }
-
-        /* Small tablets and large phones in landscape */
-        @media (max-width: 900px) {
-            #dashboard {
-                gap: var(--spacing-xs);
-                padding: var(--spacing-xs);
-            }
-
-            #analog-clock {
-                width: clamp(120px, 20vw, 220px);
-                height: clamp(120px, 20vw, 220px);
-            }
-
-            #album-art {
-                width: clamp(90px, 15vw, 160px);
-                height: clamp(90px, 15vw, 160px);
-            }
-        }
-
-        /* Switch to single column for smaller screens */
-        @media (max-width: 768px) {
-            #dashboard {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto auto;
-                padding: var(--spacing-xs);
-                gap: var(--spacing-xs);
-                overflow-y: auto;
-                height: auto;
-                min-height: 100vh;
-            }
-
-            #clock-section,
-            #spotify-section {
-                height: auto;
-                min-height: auto;
-                padding: var(--spacing-sm);
-            }
-
-            #analog-clock {
-                width: clamp(140px, 35vw, 250px);
-                height: clamp(140px, 35vw, 250px);
-            }
-
-            #album-art {
-                width: clamp(120px, 30vw, 200px);
-                height: clamp(120px, 30vw, 200px);
-            }
-
-            .now-playing-container {
-                padding: var(--spacing-sm);
-                max-width: 95vw;
-            }
-        }
-
-        /* Small mobile devices */
-        @media (max-width: 600px) {
-            #dashboard {
-                padding: 8px;
-                gap: 8px;
-            }
-
-            #analog-clock {
-                width: clamp(120px, 32vw, 200px);
-                height: clamp(120px, 32vw, 200px);
-            }
-
-            #album-art {
-                width: clamp(100px, 28vw, 160px);
-                height: clamp(100px, 28vw, 160px);
-            }
-
-            .now-playing-container {
-                padding: 12px;
-            }
-        }
-
-        /* Very small mobile devices */
-        @media (max-width: 480px) {
-            #dashboard {
-                padding: 6px;
-                gap: 6px;
-            }
-
-            #analog-clock {
-                width: clamp(100px, 30vw, 180px);
-                height: clamp(100px, 30vw, 180px);
-            }
-
-            #album-art {
-                width: clamp(80px, 25vw, 140px);
-                height: clamp(80px, 25vw, 140px);
-            }
-
-            .now-playing-container {
-                padding: 10px;
-            }
-        }
-
-        /* Ultra-wide screens */
-        @media (min-width: 1920px) {
-            #dashboard {
-                max-width: 1800px;
-                margin: 0 auto;
-                padding: var(--spacing-xl) 5vw;
-            }
-        }
-
-        /* Landscape orientation specific adjustments */
-        @media (orientation: landscape) and (max-height: 600px) {
-            #dashboard {
-                grid-template-columns: 1fr 1fr;
-                align-items: stretch;
-            }
-            
-            #clock-section,
-            #spotify-section {
-                padding: var(--spacing-sm);
-            }
-            
-            #analog-clock {
-                width: clamp(150px, 25vh, 280px);
-                height: clamp(150px, 25vh, 280px);
-            }
-            
-            #album-art {
-                width: clamp(120px, 20vh, 200px);
-                height: clamp(120px, 20vh, 200px);
-            }
-        }
-    </style>
+   <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
@@ -592,7 +87,12 @@
                 
                 <!-- Progress Section -->
                 <div id="progress-container">
-                    <input type="range" id="progress-bar" value="0" style="width: 100%;">
+                    <div id="progress-bar-container">
+                        <input type="range" id="progress-bar" value="0">
+                        <button id="play-pause-btn" class="play-pause-button">
+                            <span class="material-icons">play_arrow</span>
+                        </button>
+                    </div>
                     <div id="time-display">
                         <span id="current-time">0:00</span>
                         <span id="total-time">0:00</span>
@@ -656,6 +156,7 @@
         const currentTimeDisplay = document.getElementById('current-time');
         const totalTimeDisplay = document.getElementById('total-time');
         const dateDisplay = document.getElementById('date-display');
+        const playPauseBtn = document.getElementById('play-pause-btn');
 
         // Get the base URL for redirect URI
         const baseUrl = window.location.origin + window.location.pathname;
@@ -987,6 +488,23 @@
             // If isPlaying === true, no additional class needed (default green color)
         }
 
+        // Update play/pause button icon based on play state
+        function updatePlayPauseButton(isPlaying) {
+            const icon = playPauseBtn.querySelector('.material-icons');
+            playPauseBtn.classList.remove('playing', 'paused', 'not-playing');
+            
+            if (isPlaying === true) {
+                icon.textContent = 'pause';
+                playPauseBtn.classList.add('playing');
+            } else if (isPlaying === false) {
+                icon.textContent = 'play_arrow';
+                playPauseBtn.classList.add('paused');
+            } else {
+                icon.textContent = 'play_arrow';
+                playPauseBtn.classList.add('not-playing');
+            }
+        }
+
         // Timer for updating the playback position without API calls
         let playbackTimerId = null;
 
@@ -1020,6 +538,19 @@
                 const newPosition = parseInt(progressBar.value);
                 spotifyApiCall('PUT', `/me/player/seek?position_ms=${newPosition}`);
                 setTimeout(getCurrentlyPlaying, 250); // Quicker update after seek
+            });
+
+            // Set up play/pause button
+            playPauseBtn.addEventListener('click', async () => {
+                if (currentPlayState === true) {
+                    // Currently playing, so pause
+                    await spotifyApiCall('PUT', '/me/player/pause');
+                } else {
+                    // Currently paused or not playing, so play
+                    await spotifyApiCall('PUT', '/me/player/play');
+                }
+                // Quick update after play/pause
+                setTimeout(getCurrentlyPlaying, 250);
             });
 
             // Start polling for current track
@@ -1169,6 +700,8 @@
                         currentPlayState = newPlayState;
                         // Update progress bar class based on play state
                         updateProgressBarState(newPlayState);
+                        // Update play/pause button
+                        updatePlayPauseButton(newPlayState);
                         // Restart the playback timer when play state changes
                         startPlaybackTimer();
                         activityDetectedForPolling = true;
@@ -1228,6 +761,8 @@
 
                     // Update progress bar class for not playing state
                     updateProgressBarState(null);
+                    // Update play/pause button for not playing state
+                    updatePlayPauseButton(null);
 
                     // Clear the playback timer when playback stops
                     if (playbackTimerId) {
