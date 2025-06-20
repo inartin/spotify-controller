@@ -531,8 +531,9 @@ function setupGlobalClickHandlers() {
 
 // Handle global clicks with single/double click detection
 function handleGlobalClick(event) {
-    // Only handle clicks when dashboard is visible
-    if (dashboard.style.display === 'none') return;
+    // Only handle clicks when dashboard is visible and login container is hidden
+    if (!dashboard || !loginContainer) return;
+    if (dashboard.style.display === 'none' || loginContainer.style.display !== 'none') return;
 
     // Check if click is on excluded elements
     if (isExcludedElement(event.target)) return;
