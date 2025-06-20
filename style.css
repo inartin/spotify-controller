@@ -905,12 +905,18 @@ a {
 @media (orientation: landscape) and (max-height: 600px) {
     #dashboard {
         grid-template-columns: 1fr 1fr;
-        align-items: stretch;
+        align-items: center; /* Keep center alignment instead of stretch */
+        gap: var(--spacing-sm); /* Reduce gap to bring sections closer */
     }
 
     #clock-section,
     #spotify-section {
         padding: var(--spacing-sm);
+        /* Ensure both sections use the full available height efficiently */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
     }
 
     #analog-clock {
@@ -921,5 +927,11 @@ a {
     #album-art {
         width: clamp(120px, 20vh, 200px);
         height: clamp(120px, 20vh, 200px);
+    }
+
+    /* Adjust container sizing for low-height landscape screens */
+    .now-playing-container {
+        padding: var(--spacing-sm);
+        max-width: min(450px, 85vw);
     }
 }
